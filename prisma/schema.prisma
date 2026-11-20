@@ -1,0 +1,295 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DATABASE_URL_UNPOOLED")
+}
+
+enum CircleKind {
+  MISSION
+  LANGUAGE
+  RETURN_YEAR
+  INTEREST
+}
+
+enum VerifyStatus {
+  PENDING
+  VERIFIED
+}
+
+enum Visibility {
+  PUBLIC
+  PRIVATE
+}
+
+enum MemberRole {
+  MEMBER
+  ADMIN
+}
+
+enum MemberStatus {
+  ACTIVE
+  PENDING
+}
+
+model User {
+  id           String       @id @default(cuid())
+  email        String       @unique
+  name         String
+  passwordHash String
+  avatarUrl    String?
+  missionName  String?
+  language     String?
+  yearsServed  String?
+  homeCity     String?
+  bio          String?
+  // Career details, shown on the profile and used by the mentor directory.
+  industry       String?
+  jobTitle       String?
+  employer       String?
+  lookingForWork Boolean @default(false)
+  openToMentor   Boolean @default(false)
+  mentorAbout    String?
+  status       VerifyStatus @default(PENDING)
+  createdAt    DateTime     @default(now())
+
+  invitedBy     User?    @relation("Invites", fields: [invitedById], references: [id])
+  invitedById   String?
+  invitees      User[]   @relation("Invites")
+  invitesIssued Invite[] @relation("IssuedInvites")
+  inviteUsed    Invite?  @relation("UsedInvite")
+
+  createdCircles Circle[]       @relation("CircleCreator")
+  memberships    Membership[]
+  posts          Post[]
+  comments       Comment[]
+  messages       Message[]
+  threads        ThreadMember[]
+  rsvps          Rsvp[]
+  hosted         Event[]
+
+  postReactions    PostReaction[]
+  messageReactions MessageReaction[]
+
+  jobs                     Job[]
+  mentorRequestsSent       MentorRequest[] @relation("RequestFrom")
+  mentorRequestsReceived   MentorRequest[] @relation("RequestTo")
+}
+
+model Invite {
+  id        String    @id @default(cuid())
+  code      String    @unique
+  issuerId  String?
+  issuer    User?     @relation("IssuedInvites", fields: [issuerId], references: [id])
+  usedById  String?   @unique
+  usedBy    User?     @relation("UsedInvite", fields: [usedById], references: [id])
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+}
+
+model Circle {
+  id          String     @id @default(cuid())
+  slug        String     @unique
+  name        String
+  kind        CircleKind
+  description String
+  visibility  Visibility @default(PUBLIC)
+  createdById String?
+  createdBy   User?      @relation("CircleCreator", fields: [createdById], references: [id], onDelete: SetNull)
+  createdAt   DateTime   @default(now())
+
+  members Membership[]
+  posts   Post[]
+  thread  Thread?
+}
+
+model Membership {
+  userId   String
+  circleId String
+  role     MemberRole   @default(MEMBER)
+  status   MemberStatus @default(ACTIVE)
+  joinedAt DateTime     @default(now())
+  user     User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  circle   Circle       @relation(fields: [circleId], references: [id], onDelete: Cascade)
+
+  @@id([userId, circleId])
+}
+
+model Post {
+  id        String   @id @default(cuid())
+  body      String
+  authorId  String
+  circleId  String?
+  createdAt DateTime @default(now())
+  author    User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  circle    Circle?  @relation(fields: [circleId], references: [id], onDelete: SetNull)
+
+  likes       Like[]
+  comments    Comment[]
+  attachments Attachment[]
+  reactions   PostReaction[]
+
+  @@index([createdAt])
+  @@index([circleId, createdAt])
+}
+
+model Comment {
+  id        String   @id @default(cuid())
+  body      String
+  postId    String
+  authorId  String
+  createdAt DateTime @default(now())
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  author    User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  @@index([postId, createdAt])
+}
+
+model Like {
+  userId String
+  postId String
+  post   Post   @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@id([userId, postId])
+}
+
+model Attachment {
+  id          String   @id @default(cuid())
+  url         String
+  name        String
+  contentType String
+  size        Int
+  createdAt   DateTime @default(now())
+  postId      String?
+  messageId   String?
+  post        Post?    @relation(fields: [postId], references: [id], onDelete: Cascade)
+  message     Message? @relation(fields: [messageId], references: [id], onDelete: Cascade)
+}
+
+model Thread {
+  id        String   @id @default(cuid())
+  title     String?
+  // Set for a circle's own chat. Null for direct messages and group chats.
+  circleId  String?  @unique
+  circle    Circle?  @relation(fields: [circleId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  members  ThreadMember[]
+  messages Message[]
+}
+
+model ThreadMember {
+  threadId String
+  userId   String
+  thread   Thread @relation(fields: [threadId], references: [id], onDelete: Cascade)
+  user     User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([threadId, userId])
+}
+
+enum MessageKind {
+  TEXT
+  CALL
+}
+
+model Message {
+  id        String      @id @default(cuid())
+  body      String
+  // CALL messages are the "started a call" notes. Only the server creates them.
+  kind      MessageKind @default(TEXT)
+  threadId  String
+  senderId  String
+  createdAt DateTime @default(now())
+  thread    Thread   @relation(fields: [threadId], references: [id], onDelete: Cascade)
+  sender    User     @relation(fields: [senderId], references: [id], onDelete: Cascade)
+
+  attachments Attachment[]
+  reactions   MessageReaction[]
+
+  @@index([threadId, createdAt])
+}
+
+model Event {
+  id       String   @id @default(cuid())
+  title    String
+  location String
+  startsAt DateTime
+  hostId   String
+  host     User     @relation(fields: [hostId], references: [id], onDelete: Cascade)
+  rsvps    Rsvp[]
+}
+
+model Rsvp {
+  userId  String
+  eventId String
+  user    User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  event   Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+  @@id([userId, eventId])
+}
+
+// A person can add several different emojis to one post, but each emoji only once.
+model PostReaction {
+  userId    String
+  postId    String
+  emoji     String
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@id([userId, postId, emoji])
+  @@index([postId])
+}
+
+model MessageReaction {
+  userId    String
+  messageId String
+  emoji     String
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  message   Message  @relation(fields: [messageId], references: [id], onDelete: Cascade)
+
+  @@id([userId, messageId, emoji])
+  @@index([messageId])
+}
+
+enum JobType {
+  FULL_TIME
+  PART_TIME
+  INTERNSHIP
+  CONTRACT
+}
+
+// A job lead posted by a member. Listings are hidden after 60 days.
+model Job {
+  id          String   @id @default(cuid())
+  title       String
+  company     String
+  location    String
+  type        JobType
+  remote      Boolean  @default(false)
+  // The poster works there and can give a referral.
+  canRefer    Boolean  @default(false)
+  description String
+  applyUrl    String?
+  postedById  String
+  postedBy    User     @relation(fields: [postedById], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+
+  @@index([createdAt])
+}
+
+// Kept only to limit how many mentoring requests one person can send.
+model MentorRequest {
+  id        String   @id @default(cuid())
+  fromId    String
+  toId      String
+  createdAt DateTime @default(now())
+  from      User     @relation("RequestFrom", fields: [fromId], references: [id], onDelete: Cascade)
+  to        User     @relation("RequestTo", fields: [toId], references: [id], onDelete: Cascade)
+
+  @@index([fromId, createdAt])
+}
