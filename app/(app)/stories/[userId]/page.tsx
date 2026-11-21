@@ -12,12 +12,17 @@ export default async function StoriesPage({ params }: { params: Promise<{ userId
   const stories = await db.story.findMany({
     where: { authorId, ...(await storyWhere(viewerId)) },
     orderBy: { createdAt: "asc" },
-    include: {
-      author: { select: { id: true, name: true, avatarUrl: true } },
-      // Only the author gets to see who watched.
-      views: isOwn ? { include: { user: { select: { name: true } } }, orderBy: { createdAt: "asc" } } : false,
-    },
+    include: { author: { select: { id: true, name: true, avatarUrl: true } } },
   });
+
+  // Only the author gets to see who watched.
+  const views = isOwn && stories.length > 0
+    ? await db.storyView.findMany({
+        where: { storyId: { in: stories.map((s) => s.id) } },
+        orderBy: { createdAt: "asc" },
+        select: { storyId: true, user: { select: { name: true } } },
+      })
+    : [];
 
   if (stories.length === 0) {
     return (
@@ -39,7 +44,7 @@ export default async function StoriesPage({ params }: { params: Promise<{ userId
         imageUrl: s.imageUrl,
         bg: s.bg,
         expiresAt: s.expiresAt.toISOString(),
-        viewers: isOwn && "views" in s && Array.isArray(s.views) ? s.views.map((v) => v.user.name) : [],
+        viewers: views.filter((v) => v.storyId === s.id).map((v) => v.user.name),
       }))}
     />
   );
