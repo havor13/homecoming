@@ -5,6 +5,7 @@ import { db } from "@/lib/db";
 import { ensureCircleThread } from "@/lib/access";
 import { approveMember, makeAdmin, removeMember, toggleMembership } from "@/lib/actions/circles";
 import { postInclude } from "@/lib/queries";
+import { hiddenUserIds } from "@/lib/privacy";
 import { Avatar } from "@/components/Avatar";
 import { Chat } from "@/components/Chat";
 import { PostCard } from "@/components/PostCard";
@@ -125,16 +126,17 @@ export default async function CirclePage({
 }
 
 async function CirclePosts({ circleId, userId, isAdmin }: { circleId: string; userId: string; isAdmin: boolean }) {
+  const hidden = await hiddenUserIds(userId);
   const posts = await db.post.findMany({
-    where: { circleId },
+    where: { circleId, authorId: { notIn: hidden } },
     orderBy: { createdAt: "desc" },
     take: 50,
-    include: postInclude(userId),
+    include: postInclude(hidden),
   });
 
   return (
     <div className="stack" style={{ maxWidth: 700 }}>
-      <PostComposer circles={[]} fixedCircleId={circleId} />
+      <PostComposer userId={userId} circles={[]} fixedCircleId={circleId} />
       {posts.map((p) => (
         <PostCard key={p.id} post={p} viewerId={userId} canModerate={isAdmin} />
       ))}

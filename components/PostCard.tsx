@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { deleteComment, deletePost } from "@/lib/actions/posts";
 import { startDirectThread } from "@/lib/actions/chat";
+import { currentStatus } from "@/lib/member-status";
 import { timeAgo } from "@/lib/format";
 import { summarize } from "@/lib/reactions";
 import type { PostWithMeta } from "@/lib/queries";
@@ -8,6 +9,7 @@ import { Attachments } from "./Attachments";
 import { Avatar } from "./Avatar";
 import { CommentForm } from "./CommentForm";
 import { ReactionBar } from "./ReactionBar";
+import { ReportButton } from "./ReportButton";
 
 export function PostCard({
   post,
@@ -27,6 +29,7 @@ export function PostCard({
         <div className="grow">
           <Link href={`/people/${post.authorId}`}><strong>{post.author.name}</strong></Link>
           <div className="muted">{post.author.missionName} · {timeAgo(post.createdAt)}</div>
+          {currentStatus(post.author) && <div className="status-line">{currentStatus(post.author)}</div>}
         </div>
         {post.circle && (
           <Link className="chip amber" href={`/circles/${post.circle.slug}`}>{post.circle.name}</Link>
@@ -43,6 +46,7 @@ export function PostCard({
             <button>Message</button>
           </form>
         )}
+        {post.authorId !== viewerId && <ReportButton targetType="POST" targetId={post.id} />}
         {canDelete && (
           <form action={deletePost.bind(null, post.id)} style={{ marginLeft: "auto" }}>
             <button className="danger">Delete</button>
@@ -64,6 +68,7 @@ export function PostCard({
                 <button className="link">Delete</button>
               </form>
             )}
+            {c.authorId !== viewerId && <ReportButton targetType="COMMENT" targetId={c.id} compact />}
           </div>
         ))}
         {post._count.comments > post.comments.length && (

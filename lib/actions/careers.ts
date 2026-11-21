@@ -6,6 +6,7 @@ import { z } from "zod";
 import { db } from "@/lib/db";
 import { requireUserId } from "@/lib/session";
 import { findOrCreateDirectThread } from "@/lib/threads";
+import { canMessage } from "@/lib/privacy";
 import { JOB_TYPES } from "@/lib/careers";
 import type { FormState } from "@/lib/types";
 
@@ -98,6 +99,7 @@ export async function requestMentoring(_prev: FormState, formData: FormData): Pr
     select: { id: true, name: true, openToMentor: true },
   });
   if (!mentor?.openToMentor) return { error: "That member is not taking mentoring requests." };
+  if (!(await canMessage(userId, mentorId))) return { error: "That member isn't accepting messages from you." };
 
   const sentToday = await db.mentorRequest.count({
     where: { fromId: userId, createdAt: { gte: new Date(Date.now() - DAY) } },

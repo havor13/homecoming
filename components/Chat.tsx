@@ -4,6 +4,7 @@ import { CallBanner } from "./CallBanner";
 import { ChatForm } from "./ChatForm";
 import { ChatLog } from "./ChatLog";
 import { ReactionBar } from "./ReactionBar";
+import { ReportButton } from "./ReportButton";
 import { timeAgo } from "@/lib/format";
 import { summarize } from "@/lib/reactions";
 import type { MessageWithMeta } from "@/lib/queries";
@@ -46,6 +47,7 @@ export function Chat({
                 <Attachments items={m.attachments} />
               </div>
               <ReactionBar target="message" id={m.id} summary={summarize(m.reactions, viewerId)} />
+              {!mine && <ReportButton targetType="MESSAGE" targetId={m.id} compact />}
               <span className="muted" style={{ fontSize: 12 }}>{timeAgo(m.createdAt)}</span>
             </div>
           );

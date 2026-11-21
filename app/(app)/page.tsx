@@ -2,7 +2,11 @@ import Link from "next/link";
 import { auth } from "@/auth";
 import { db } from "@/lib/db";
 import { postInclude } from "@/lib/queries";
+import { hiddenUserIds } from "@/lib/privacy";
 import { PostCard } from "@/components/PostCard";
+import { StoryTray } from "@/components/StoryTray";
+import { StatusForm } from "@/components/StatusForm";
+import { currentStatus } from "@/lib/member-status";
 import { PostComposer } from "@/components/PostComposer";
 
 export default async function FeedPage() {
@@ -17,9 +21,13 @@ export default async function FeedPage() {
   const circles = memberships.map((m) => m.circle);
   const adminCircleIds = new Set(memberships.filter((m) => m.role === "ADMIN").map((m) => m.circleId));
 
+  const hidden = await hiddenUserIds(userId);
+  const meRow = await db.user.findUnique({ where: { id: userId }, select: { statusText: true, statusUpdatedAt: true } });
+
   const posts = await db.post.findMany({
-    // Posts for everyone, plus posts in circles the person has joined.
+    // Posts for everyone, plus posts in circles the person has joined. Blocked members are left out.
     where: {
+      authorId: { notIn: hidden },
       OR: [
         { circleId: null },
         { circle: { members: { some: { userId, status: "ACTIVE" } } } },
@@ -27,15 +35,16 @@ export default async function FeedPage() {
     },
     orderBy: { createdAt: "desc" },
     take: 50,
-    include: postInclude(userId),
+    include: postInclude(hidden),
   });
 
   return (
     <>
       <h1>Home</h1>
+      <StoryTray viewerId={userId} />
       <div className="two">
         <div className="wide stack">
-          <PostComposer circles={circles.map((c) => ({ id: c.id, name: c.name }))} />
+          <PostComposer userId={userId} circles={circles.map((c) => ({ id: c.id, name: c.name }))} />
 
           {posts.map((p) => (
             <PostCard
@@ -49,6 +58,7 @@ export default async function FeedPage() {
         </div>
 
         <aside className="rail stack">
+          <StatusForm initial={meRow ? currentStatus(meRow) ?? "" : ""} />
           <section className="card">
             <h2>Your circles</h2>
             {circles.length === 0 && <p className="muted">You have not joined any circles yet.</p>}

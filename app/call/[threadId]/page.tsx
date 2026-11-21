@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { auth } from "@/auth";
+import { requireUserId } from "@/lib/session";
 import { db } from "@/lib/db";
 import { canAccessThread } from "@/lib/access";
 import { createCallToken, livekitConfigured, livekitUrl } from "@/lib/livekit";
@@ -16,8 +16,7 @@ export default async function CallPage({
   const { threadId } = await params;
   const { mode } = await searchParams;
 
-  const session = await auth();
-  const userId = session!.user.id;
+  const userId = await requireUserId();
 
   // Same rule as the chat itself: only people in the chat (or the circle) can join its call.
   if (!(await canAccessThread(userId, threadId))) notFound();

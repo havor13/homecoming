@@ -1,17 +1,21 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { db } from "@/lib/db";
 import { logout } from "@/lib/actions/auth";
 import { Avatar } from "@/components/Avatar";
+import { isModeratorEmail } from "@/lib/moderation";
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const session = await auth();
   const me = session?.user?.id
     ? await db.user.findUnique({
         where: { id: session.user.id },
-        select: { name: true, avatarUrl: true },
+        select: { name: true, avatarUrl: true, email: true, suspendedAt: true },
       })
     : null;
+  if (session?.user?.id && !me) redirect("/api/signout");
+  if (me?.suspendedAt) redirect("/suspended");
 
   return (
     <div className="shell">
@@ -32,6 +36,8 @@ export default async function AppLayout({ children }: { children: React.ReactNod
           <Link href="/mentors">Mentors</Link>
           <Link href="/events">Reunions and events</Link>
           <Link href="/profile">My profile</Link>
+          <Link href="/settings">Privacy and settings</Link>
+          {me && isModeratorEmail(me.email) && <Link href="/admin/reports">Reports</Link>}
         </nav>
         <form action={logout}>
           <button type="submit">Sign out</button>

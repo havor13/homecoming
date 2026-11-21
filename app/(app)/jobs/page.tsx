@@ -5,7 +5,9 @@ import { startDirectThread } from "@/lib/actions/chat";
 import { deleteJob } from "@/lib/actions/careers";
 import { JOB_TYPES, JOB_TYPE_LABEL } from "@/lib/careers";
 import { timeAgo } from "@/lib/format";
+import { hiddenUserIds } from "@/lib/privacy";
 import { Avatar } from "@/components/Avatar";
+import { ReportButton } from "@/components/ReportButton";
 
 const LISTING_DAYS = 60;
 
@@ -20,8 +22,11 @@ export default async function JobsPage({
 
   const jobType = JOB_TYPES.find((t) => t === type);
 
+  const hidden = await hiddenUserIds(userId);
+
   const jobs = await db.job.findMany({
     where: {
+      postedById: { notIn: hidden },
       createdAt: { gte: new Date(Date.now() - LISTING_DAYS * 24 * 60 * 60 * 1000) },
       ...(jobType ? { type: jobType } : {}),
       ...(q
@@ -94,9 +99,12 @@ export default async function JobsPage({
                 </a>
               )}
               {j.postedById !== userId ? (
-                <form action={startDirectThread.bind(null, j.postedById)}>
-                  <button>{j.canRefer ? "Ask for a referral" : "Message"}</button>
-                </form>
+                <>
+                  <form action={startDirectThread.bind(null, j.postedById)}>
+                    <button>{j.canRefer ? "Ask for a referral" : "Message"}</button>
+                  </form>
+                  <ReportButton targetType="JOB" targetId={j.id} />
+                </>
               ) : (
                 <form action={deleteJob.bind(null, j.id)}>
                   <button className="danger">Remove</button>

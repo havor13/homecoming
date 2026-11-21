@@ -22,7 +22,7 @@ export const { auth, signIn, signOut, handlers } = NextAuth({
         const user = await db.user.findUnique({
           where: { email: parsed.data.email.toLowerCase() },
         });
-        if (!user) return null;
+        if (!user || user.suspendedAt) return null;
 
         const ok = await bcrypt.compare(parsed.data.password, user.passwordHash);
         if (!ok) return null;

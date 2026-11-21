@@ -53,6 +53,14 @@ model User {
   lookingForWork Boolean @default(false)
   openToMentor   Boolean @default(false)
   mentorAbout    String?
+  // A short "what I'm up to" line that members can update any time. Shown for 14 days.
+  statusText      String?
+  statusUpdatedAt DateTime?
+  // Safety and privacy
+  suspendedAt       DateTime?
+  profileVisibility ProfileVisibility @default(EVERYONE)
+  whoCanMessage     MessagePolicy     @default(EVERYONE)
+  showHomeCity      Boolean           @default(true)
   status       VerifyStatus @default(PENDING)
   createdAt    DateTime     @default(now())
 
@@ -77,6 +85,13 @@ model User {
   jobs                     Job[]
   mentorRequestsSent       MentorRequest[] @relation("RequestFrom")
   mentorRequestsReceived   MentorRequest[] @relation("RequestTo")
+
+  reportsMade    Report[] @relation("ReportsMade")
+  reportsAbout   Report[] @relation("ReportsAbout")
+  stories        Story[]
+  storyViews     StoryView[]
+  blocksMade     Block[]  @relation("Blocker")
+  blocksReceived Block[]  @relation("Blocked")
 }
 
 model Invite {
@@ -292,4 +307,97 @@ model MentorRequest {
   to        User     @relation("RequestTo", fields: [toId], references: [id], onDelete: Cascade)
 
   @@index([fromId, createdAt])
+}
+
+enum ProfileVisibility {
+  EVERYONE
+  CIRCLES
+}
+
+enum MessagePolicy {
+  EVERYONE
+  CIRCLES
+}
+
+enum ReportTarget {
+  STORY
+  POST
+  COMMENT
+  MESSAGE
+  USER
+  JOB
+}
+
+enum ReportReason {
+  SPAM
+  HARASSMENT
+  INAPPROPRIATE
+  FALSE_IDENTITY
+  PRIVACY
+  OTHER
+}
+
+enum ReportStatus {
+  OPEN
+  ACTIONED
+  DISMISSED
+}
+
+// A member's report about content or another member. The snippet is a copy of the text at the
+// time of the report, so moderators can still see what was said after it is edited or removed.
+model Report {
+  id           String       @id @default(cuid())
+  reporterId   String
+  targetType   ReportTarget
+  targetId     String
+  targetUserId String?
+  reason       ReportReason
+  note         String?
+  snippet      String
+  status       ReportStatus @default(OPEN)
+  resolvedById String?
+  resolvedAt   DateTime?
+  createdAt    DateTime     @default(now())
+  reporter     User         @relation("ReportsMade", fields: [reporterId], references: [id], onDelete: Cascade)
+  targetUser   User?        @relation("ReportsAbout", fields: [targetUserId], references: [id], onDelete: SetNull)
+
+  @@index([status, createdAt])
+  @@index([targetType, targetId])
+}
+
+model Block {
+  blockerId String
+  blockedId String
+  createdAt DateTime @default(now())
+  blocker   User     @relation("Blocker", fields: [blockerId], references: [id], onDelete: Cascade)
+  blocked   User     @relation("Blocked", fields: [blockedId], references: [id], onDelete: Cascade)
+
+  @@id([blockerId, blockedId])
+  @@index([blockedId])
+}
+
+// A story: a photo or short text that disappears after 24 hours.
+model Story {
+  id        String   @id @default(cuid())
+  authorId  String
+  author    User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  body      String   @default("")
+  imageUrl  String?
+  bg        String   @default("green")
+  createdAt DateTime @default(now())
+  expiresAt DateTime
+  views     StoryView[]
+
+  @@index([expiresAt])
+  @@index([authorId, expiresAt])
+}
+
+model StoryView {
+  storyId   String
+  story     Story    @relation(fields: [storyId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@id([storyId, userId])
 }

@@ -7,9 +7,9 @@ import { Chat } from "@/components/Chat";
 export default async function MessagesPage({
   searchParams,
 }: {
-  searchParams: Promise<{ t?: string }>;
+  searchParams: Promise<{ t?: string; notice?: string }>;
 }) {
-  const { t } = await searchParams;
+  const { t, notice } = await searchParams;
   const session = await auth();
   const userId = session!.user.id;
 
@@ -54,6 +54,11 @@ export default async function MessagesPage({
         <Link className="btn" href="/messages/new">New group chat</Link>
         <Link className="btn primary" href="/people">Find people</Link>
       </div>
+      {notice === "unavailable" && (
+        <p className="card error" role="alert">
+          That member isn&apos;t accepting messages from you.
+        </p>
+      )}
       <div className="two">
         <nav className="rail card" aria-label="Conversations">
           {threads.length === 0 && (

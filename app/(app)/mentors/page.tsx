@@ -2,6 +2,7 @@ import Link from "next/link";
 import { auth } from "@/auth";
 import { db } from "@/lib/db";
 import { INDUSTRIES, isIndustry } from "@/lib/careers";
+import { hiddenUserIds, visibleTo } from "@/lib/privacy";
 import { Avatar } from "@/components/Avatar";
 import { RequestMentoringForm } from "@/components/RequestMentoringForm";
 
@@ -14,10 +15,13 @@ export default async function MentorsPage({
   const session = await auth();
   const userId = session!.user.id;
 
+  const hidden = await hiddenUserIds(userId);
+
   const mentors = await db.user.findMany({
     where: {
       openToMentor: true,
-      id: { not: userId },
+      AND: [visibleTo(userId)],
+      id: { not: userId, notIn: hidden },
       ...(industry && isIndustry(industry) ? { industry } : {}),
       ...(q
         ? {

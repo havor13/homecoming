@@ -1,7 +1,9 @@
+import { currentStatus } from "@/lib/member-status";
 import Link from "next/link";
 import { auth } from "@/auth";
 import { db } from "@/lib/db";
 import { startDirectThread } from "@/lib/actions/chat";
+import { hiddenUserIds, visibleTo } from "@/lib/privacy";
 import { Avatar } from "@/components/Avatar";
 
 export default async function PeoplePage({
@@ -14,8 +16,12 @@ export default async function PeoplePage({
   const session = await auth();
   const userId = session!.user.id;
 
+  const hidden = await hiddenUserIds(userId);
+
   const people = await db.user.findMany({
     where: {
+      AND: [visibleTo(userId)],
+      id: { notIn: hidden },
       ...(openToWork ? { lookingForWork: true } : {}),
       ...(q
         ? {
@@ -23,7 +29,7 @@ export default async function PeoplePage({
               { name: { contains: q, mode: "insensitive" } },
               { missionName: { contains: q, mode: "insensitive" } },
               { language: { contains: q, mode: "insensitive" } },
-              { homeCity: { contains: q, mode: "insensitive" } },
+              { AND: [{ homeCity: { contains: q, mode: "insensitive" } }, { showHomeCity: true }] },
               { jobTitle: { contains: q, mode: "insensitive" } },
               { employer: { contains: q, mode: "insensitive" } },
               { industry: { contains: q, mode: "insensitive" } },
@@ -40,6 +46,8 @@ export default async function PeoplePage({
       language: true,
       avatarUrl: true,
       status: true,
+      statusText: true,
+      statusUpdatedAt: true,
       jobTitle: true,
       employer: true,
       lookingForWork: true,
@@ -72,6 +80,7 @@ export default async function PeoplePage({
               <div className="grow">
                 <Link href={`/people/${p.id}`}><strong>{p.name}</strong></Link>
                 {p.id === userId && <span className="muted"> (you)</span>}
+                {currentStatus(p) && <div className="status-line">{currentStatus(p)}</div>}
                 {(p.jobTitle || p.employer) && (
                   <div>{[p.jobTitle, p.employer].filter(Boolean).join(" at ")}</div>
                 )}

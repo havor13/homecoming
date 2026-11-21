@@ -71,3 +71,25 @@ Vercel works. With the Neon integration (leave its Auth and Realtime options off
 5. Rate limiting on login, sign-up and posting.
 6. Circle settings (edit, archive, transfer ownership) and event comments.
 7. Ringing: a push or email nudge when someone starts a call.
+
+## Moderation and privacy
+
+- **Reports.** Every post, comment, message, job and profile has a Report button. Reports go to a queue at `/admin/reports`.
+- **Moderators.** Set `MODERATOR_EMAILS` (comma-separated) in `.env` and in Vercel. Moderators see only what was reported. They can dismiss a report, remove the content, or suspend the member. Suspended members cannot sign in and can be restored from the same page.
+- **Blocking.** Blocking someone hides their posts, comments, jobs and profile from you and stops direct messages either way. Messages from a blocked person still appear inside group chats you share.
+- **Privacy settings** (`/settings`): who can see your profile (everyone or only people in your circles), who can message you, and whether your home city is shown.
+- **Your data.** `/settings` has a JSON export and permanent account deletion (removes your content and uploaded files).
+- **Public pages.** `/guidelines` and `/privacy` are plain-language drafts. Replace every `[YOUR CONTACT EMAIL]` and have the text reviewed before launch. They are not legal advice.
+- After pulling this update run `npm run db:push` (additive: new columns and the Report and Block tables).
+
+## Stories
+
+- Members can share a photo or a short text on a coloured background from Home ("Add story"). Stories disappear after 24 hours.
+- Who can see a story follows the profile privacy setting. Blocked people never see each other's stories.
+- Authors see who watched each story and can delete it. Anyone else can report it; moderators can remove it.
+- Expired stories are hidden straight away and their rows and photos are deleted the next time anyone posts a story.
+- After updating run `npm run db:push` (adds the Story and StoryView tables and a STORY report type).
+
+## Videos on posts
+
+Posts can include one video (MP4, WebM or MOV, up to 50 MB). The browser uploads it straight to Vercel Blob using a short-lived token from `/api/blob/upload`, so the 4 MB server limit does not apply. The post then verifies the file is in the member's own folder before saving it. Deleting a post, or the account, deletes the video.

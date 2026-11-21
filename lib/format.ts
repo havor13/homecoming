@@ -31,3 +31,11 @@ export function slugify(text: string) {
     .replace(/(^-|-$)/g, "")
     .slice(0, 60);
 }
+
+/** "Expires in 5 hours" style label for stories. */
+export function timeLeftLabel(expires: Date) {
+  const mins = Math.max(0, Math.round((expires.getTime() - Date.now()) / 60000));
+  if (mins < 60) return `Disappears in ${Math.max(mins, 1)} min`;
+  const hours = Math.round(mins / 60);
+  return `Disappears in ${hours} ${hours === 1 ? "hour" : "hours"}`;
+}

@@ -1,14 +1,16 @@
 import Link from "next/link";
 import { auth } from "@/auth";
 import { db } from "@/lib/db";
+import { hiddenUserIds, visibleTo } from "@/lib/privacy";
 import { GroupChatForm } from "@/components/GroupChatForm";
 
 export default async function NewGroupChatPage() {
   const session = await auth();
   const userId = session!.user.id;
 
+  const hidden = await hiddenUserIds(userId);
   const people = await db.user.findMany({
-    where: { id: { not: userId } },
+    where: { AND: [visibleTo(userId)], id: { not: userId, notIn: hidden } },
     orderBy: { name: "asc" },
     take: 200,
     select: { id: true, name: true, missionName: true, avatarUrl: true },

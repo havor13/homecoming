@@ -125,3 +125,45 @@ button.link { min-height: 0; padding: 4px 8px; border: 0; background: transparen
 
 /* Careers */
 details.ask > summary { cursor: pointer; font-weight: 600; min-height: 44px; display: flex; align-items: center; color: var(--accent-dark); }
+
+/* Moderation and privacy */
+details.report { display: inline-block; }
+details.report > summary { cursor: pointer; min-height: 44px; display: inline-flex; align-items: center; color: var(--muted); font-size: 14px; }
+details.report.compact > summary { min-height: 32px; font-size: 12px; }
+details.report form { display: flex; flex-direction: column; gap: 8px; padding: 12px; margin-top: 4px; border: 1px solid var(--line, #ddd); border-radius: 10px; background: var(--card, #fff); max-width: 320px; }
+.quote { margin: 8px 0; padding: 8px 12px; border-left: 3px solid var(--accent-dark); background: var(--ground); white-space: pre-wrap; }
+.doc { max-width: 720px; margin: 0 auto; padding: 24px 16px; line-height: 1.6; }
+.doc h1, .doc h2 { margin-top: 1.4em; }
+.danger-zone { border: 1px solid #b3261e; border-radius: 12px; padding: 16px; }
+
+/* Footer */
+.site-footer { border-top: 1px solid var(--border); background: var(--card); margin-top: 24px; }
+.site-footer-inner { max-width: 960px; margin: 0 auto; padding: 24px 20px; display: flex; flex-direction: column; gap: 12px; font-size: 14px; color: var(--muted); }
+.site-footer-links { display: flex; flex-wrap: wrap; gap: 8px 20px; }
+.site-footer-links a { display: inline-flex; align-items: center; min-height: 44px; }
+
+/* Status */
+.status-line { font-size: 14px; color: var(--accent-dark); background: var(--accent-soft); display: inline-block; padding: 2px 10px; border-radius: 999px; margin-top: 4px; overflow-wrap: anywhere; }
+.status-line.big { font-size: 16px; padding: 6px 14px; align-self: flex-start; }
+
+/* Stories */
+.story-tray { display: flex; gap: 14px; overflow-x: auto; padding: 4px 2px 8px; }
+.story-item { display: flex; flex-direction: column; align-items: center; gap: 4px; min-width: 72px; text-decoration: none; color: var(--ink); font-size: 13px; }
+.story-ring { display: inline-flex; padding: 3px; border-radius: 50%; border: 3px solid var(--border); }
+.story-ring.new { border-color: var(--accent); }
+.story-add { width: 64px; height: 64px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 30px; background: var(--accent-soft); color: var(--accent-dark); border: 2px dashed var(--accent); }
+.story-dots { display: flex; gap: 4px; }
+.story-dots span { flex: 1; height: 4px; border-radius: 2px; background: var(--border); }
+.story-dots span.on { background: var(--accent); }
+.story-card { position: relative; border-radius: 20px; overflow: hidden; aspect-ratio: 9 / 14; display: flex; align-items: center; justify-content: center; }
+.story-img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.story-text { position: relative; color: #fff; font-family: Georgia, serif; font-size: 26px; line-height: 1.35; text-align: center; padding: 28px; overflow-wrap: anywhere; white-space: pre-wrap; }
+.story-caption { position: absolute; left: 0; right: 0; bottom: 0; color: #fff; padding: 40px 18px 18px; background: linear-gradient(transparent, rgba(0,0,0,.75)); font-size: 18px; overflow-wrap: anywhere; white-space: pre-wrap; }
+.swatch { position: relative; width: 44px; height: 44px; border-radius: 50%; cursor: pointer; display: inline-block; }
+.swatch input { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; margin: 0; cursor: pointer; }
+.swatch:has(input:checked) { outline: 3px solid var(--ink); outline-offset: 2px; }
+.swatch:has(input:focus-visible) { outline: 3px solid var(--accent); outline-offset: 2px; }
+a.button { display: inline-flex; align-items: center; justify-content: center; min-height: 48px; padding: 0 20px; border-radius: 12px; background: var(--accent-dark); color: #fff; text-decoration: none; font-weight: 600; }
+
+/* Post video */
+.post-video { width: 100%; max-height: 480px; border-radius: 12px; background: #000; }

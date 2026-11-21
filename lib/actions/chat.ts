@@ -7,6 +7,7 @@ import { db } from "@/lib/db";
 import { requireUserId } from "@/lib/session";
 import { canAccessThread } from "@/lib/access";
 import { findOrCreateDirectThread } from "@/lib/threads";
+import { canMessage, directThreadBlocked } from "@/lib/privacy";
 import { pickFiles, tryUpload } from "@/lib/upload";
 import type { FormState } from "@/lib/types";
 
@@ -16,6 +17,9 @@ export async function sendMessage(_prev: FormState, formData: FormData): Promise
   const threadId = String(formData.get("threadId") ?? "");
   if (!(await canAccessThread(userId, threadId))) {
     return { error: "You can't post in this conversation." };
+  }
+  if (await directThreadBlocked(threadId, userId)) {
+    return { error: "You can't send messages in this conversation." };
   }
 
   const body = z.string().trim().max(2000, "Messages can be up to 2,000 characters.").safeParse(formData.get("body") ?? "");
@@ -41,6 +45,9 @@ export async function startDirectThread(otherUserId: string) {
   const other = await db.user.findUnique({ where: { id: otherUserId }, select: { id: true } });
   if (!other) return;
 
+  // Blocks and "who can message me" settings apply. The messages page explains the refusal.
+  if (!(await canMessage(userId, otherUserId))) redirect("/messages?notice=unavailable");
+
   const thread = await findOrCreateDirectThread(userId, otherUserId);
   redirect(`/messages?t=${thread.id}`);
 }
@@ -57,6 +64,12 @@ export async function createGroupChat(_prev: FormState, formData: FormData): Pro
 
   const found = await db.user.findMany({ where: { id: { in: ids } }, select: { id: true } });
   if (found.length !== ids.length) return { error: "Some of those people could not be found." };
+
+  for (const id of ids) {
+    if (!(await canMessage(userId, id))) {
+      return { error: "Some of those people can't be added to a group chat. Try removing a few." };
+    }
+  }
 
   const thread = await db.thread.create({
     data: {

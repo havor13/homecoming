@@ -13,9 +13,14 @@ const MAX_UPLOAD_BYTES = 4 * 1024 * 1024;
  */
 export function useActionForm(
   action: (prev: FormState, formData: FormData) => Promise<FormState>,
-  options: { resetOnSuccess?: boolean } = {},
+  options: {
+    resetOnSuccess?: boolean;
+    /** Runs before sending (for example a direct upload). Return an error message to stop. */
+    prepare?: (formData: FormData) => Promise<string | undefined>;
+  } = {},
 ) {
-  const { resetOnSuccess = true } = options;
+  const { resetOnSuccess = true, prepare } = options;
+  const [preparing, setPreparing] = useState(false);
   const [state, run, pending] = useActionState(action, undefined);
   const [localError, setLocalError] = useState<string | undefined>();
   const ref = useRef<HTMLFormElement>(null);
@@ -24,9 +29,25 @@ export function useActionForm(
     if (state?.ok && resetOnSuccess) ref.current?.reset();
   }, [state, resetOnSuccess]);
 
-  function onSubmit(e: FormEvent<HTMLFormElement>) {
+  async function onSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
+
+    if (prepare) {
+      setPreparing(true);
+      setLocalError(undefined);
+      let problem: string | undefined;
+      try {
+        problem = await prepare(formData);
+      } catch {
+        problem = "Something went wrong while uploading. Please try again.";
+      }
+      setPreparing(false);
+      if (problem) {
+        setLocalError(problem);
+        return;
+      }
+    }
 
     let total = 0;
     for (const value of formData.values()) {
@@ -40,5 +61,5 @@ export function useActionForm(
     startTransition(() => run(formData));
   }
 
-  return { ref, onSubmit, pending, state, error: localError ?? state?.error };
+  return { ref, onSubmit, pending: pending || preparing, state, error: localError ?? state?.error };
 }
