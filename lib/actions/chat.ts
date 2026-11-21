@@ -1,5 +1,6 @@
 "use server";
 
+import { after } from "next/server";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
@@ -7,6 +8,7 @@ import { db } from "@/lib/db";
 import { requireUserId } from "@/lib/session";
 import { canAccessThread } from "@/lib/access";
 import { findOrCreateDirectThread } from "@/lib/threads";
+import { notifyNewMessage } from "@/lib/notify";
 import { canMessage, directThreadBlocked } from "@/lib/privacy";
 import { pickFiles, tryUpload } from "@/lib/upload";
 import type { FormState } from "@/lib/types";
@@ -34,6 +36,7 @@ export async function sendMessage(_prev: FormState, formData: FormData): Promise
   await db.message.create({
     data: { threadId, senderId: userId, body: body.data, attachments: { create: upload.files } },
   });
+  after(() => notifyNewMessage(threadId, userId));
   revalidatePath("/", "layout");
   return { ok: true };
 }

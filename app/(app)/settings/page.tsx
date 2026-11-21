@@ -4,6 +4,7 @@ import { db } from "@/lib/db";
 import { toggleBlock } from "@/lib/actions/privacy";
 import { Avatar } from "@/components/Avatar";
 import { DeleteAccountForm } from "@/components/DeleteAccountForm";
+import { NotificationForm } from "@/components/NotificationForm";
 import { PrivacyForm } from "@/components/PrivacyForm";
 
 export default async function SettingsPage() {
@@ -12,7 +13,7 @@ export default async function SettingsPage() {
 
   const me = await db.user.findUniqueOrThrow({
     where: { id: userId },
-    select: { profileVisibility: true, whoCanMessage: true, showHomeCity: true },
+    select: { profileVisibility: true, whoCanMessage: true, showHomeCity: true, emailMessages: true, emailActivity: true },
   });
 
   const blocks = await db.block.findMany({
@@ -35,6 +36,8 @@ export default async function SettingsPage() {
         whoCanMessage={me.whoCanMessage}
         showHomeCity={me.showHomeCity}
       />
+
+      <NotificationForm emailMessages={me.emailMessages} emailActivity={me.emailActivity} />
 
       <section className="card" style={{ maxWidth: 560 }}>
         <h2>People you have blocked</h2>

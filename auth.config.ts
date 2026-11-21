@@ -10,7 +10,8 @@ export const authConfig = {
       const path = nextUrl.pathname;
       // Readable by anyone, signed in or not.
       if (path === "/guidelines" || path === "/privacy") return true;
-      const isPublic = path === "/login" || path === "/join";
+      const isPublic =
+        path === "/login" || path === "/join" || path === "/forgot-password" || path === "/reset-password";
       if (isPublic) {
         return loggedIn ? Response.redirect(new URL("/", nextUrl)) : true;
       }

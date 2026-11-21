@@ -1,6 +1,8 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { after } from "next/server";
+import { notifyComment } from "@/lib/notify";
 import { z } from "zod";
 import { db } from "@/lib/db";
 import { requireUserId } from "@/lib/session";
@@ -95,6 +97,7 @@ export async function createComment(_prev: FormState, formData: FormData): Promi
   if (!(await canViewPost(userId, postId))) return { error: "You can't comment on this post." };
 
   await db.comment.create({ data: { body: body.data, postId, authorId: userId } });
+  after(() => notifyComment(postId, userId));
   refresh();
   return { ok: true };
 }

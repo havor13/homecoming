@@ -1,5 +1,7 @@
 "use server";
 
+import { after } from "next/server";
+import { notifyMentorRequest } from "@/lib/notify";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
@@ -116,6 +118,7 @@ export async function requestMentoring(_prev: FormState, formData: FormData): Pr
     data: { threadId: thread.id, senderId: userId, body: `Mentoring request: ${note}` },
   });
   await db.mentorRequest.create({ data: { fromId: userId, toId: mentorId } });
+  after(() => notifyMentorRequest(mentorId, userId, thread.id));
 
   revalidatePath("/", "layout");
   redirect(`/messages?t=${thread.id}`);

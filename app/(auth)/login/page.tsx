@@ -21,6 +21,7 @@ export default function LoginPage() {
         </div>
         {state?.error && <p className="error" role="alert">{state.error}</p>}
         <button className="primary" disabled={pending}>{pending ? "Signing in..." : "Sign in"}</button>
+        <p><Link href="/forgot-password">Forgot your password?</Link></p>
         <p className="muted">Have an invite code? <Link href="/join">Join Homecoming</Link></p>
       </form>
     </div>

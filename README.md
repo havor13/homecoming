@@ -93,3 +93,11 @@ Vercel works. With the Neon integration (leave its Auth and Realtime options off
 ## Videos on posts
 
 Posts can include one video (MP4, WebM or MOV, up to 50 MB). The browser uploads it straight to Vercel Blob using a short-lived token from `/api/blob/upload`, so the 4 MB server limit does not apply. The post then verifies the file is in the member's own folder before saving it. Deleting a post, or the account, deletes the video.
+
+## Email: password reset and notifications
+
+- **Password reset:** "Forgot your password?" on the sign-in page emails a one-hour, single-use link. The form gives the same answer whether or not the email has an account. Up to 3 links an hour per account, and a "your password was changed" email is sent afterwards.
+- **Notifications:** new messages in direct and group chats (at most one email per conversation every 30 minutes), comments on your posts, and mentoring requests. Circle chats never send email. Each person can turn these off in Settings. Emails contain who wrote and a link, never the text.
+- **Setup with Gmail:** turn on 2-Step Verification for the Gmail account, create an App Password, and set `GMAIL_USER` and `GMAIL_APP_PASSWORD` (plus `APP_URL`). Run `npm install` for the new package. Gmail allows about 500 emails a day.
+- **Setup with Resend:** create a Resend account, verify your sending domain, and set `RESEND_API_KEY`, `EMAIL_FROM` and `APP_URL` in `.env` and in Vercel. Run `npm run db:push` for the new columns and table.
+- Without `RESEND_API_KEY` (for example locally) the email is printed in the terminal, including the reset link.
