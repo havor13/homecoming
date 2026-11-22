@@ -35,7 +35,7 @@ export default function GuidelinesPage() {
       <p>
         Use the Report button on a post, comment, message, job or profile. Moderators see the reported item and
         your note, not your other messages. Depending on what they find, they may dismiss the report, remove the
-        content or suspend the member. To appeal, contact [sampsonhavor43@gmail.com].
+        content or suspend the member. To appeal, contact [homecomingrm@gmail.com].
       </p>
 
       <p>

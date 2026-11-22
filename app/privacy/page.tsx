@@ -7,7 +7,7 @@ export default function PrivacyPage() {
     <main className="doc">
       <h1>Privacy summary</h1>
       <p className="muted">
-        A plain-language summary of how Homecoming handles your information. Questions: [YOUR CONTACT EMAIL].
+        A plain-language summary of how Homecoming handles your information. Questions: [homecomingrm@gmail.com].
       </p>
 
       <h2>What we store</h2>
