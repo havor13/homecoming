@@ -101,3 +101,7 @@ Posts can include one video (MP4, WebM or MOV, up to 50 MB). The browser uploads
 - **Setup with Gmail:** turn on 2-Step Verification for the Gmail account, create an App Password, and set `GMAIL_USER` and `GMAIL_APP_PASSWORD` (plus `APP_URL`). Run `npm install` for the new package. Gmail allows about 500 emails a day.
 - **Setup with Resend:** create a Resend account, verify your sending domain, and set `RESEND_API_KEY`, `EMAIL_FROM` and `APP_URL` in `.env` and in Vercel. Run `npm run db:push` for the new columns and table.
 - Without `RESEND_API_KEY` (for example locally) the email is printed in the terminal, including the reset link.
+
+## Install on phones (PWA)
+
+Homecoming has a web app manifest, icons and a tiny service worker, so members can add it to their home screen (iPhone: Share, then Add to Home Screen; Android: menu, then Install app). The service worker only shows an offline page when there is no connection. It never caches posts or messages. It is registered only in production builds, so it does not run in `npm run dev`. Settings explains how to install.

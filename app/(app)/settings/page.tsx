@@ -37,6 +37,13 @@ export default async function SettingsPage() {
         showHomeCity={me.showHomeCity}
       />
 
+      <section className="card" style={{ maxWidth: 560 }}>
+        <h2>Install Homecoming on your phone</h2>
+        <p><strong>iPhone:</strong> open this site in Safari, tap the Share button, then <em>Add to Home Screen</em>.</p>
+        <p><strong>Android:</strong> open this site in Chrome, tap the menu (three dots), then <em>Install app</em> or <em>Add to Home screen</em>.</p>
+        <p className="muted">It then opens full-screen with its own icon, like any other app.</p>
+      </section>
+
       <NotificationForm emailMessages={me.emailMessages} emailActivity={me.emailActivity} />
 
       <section className="card" style={{ maxWidth: 560 }}>
