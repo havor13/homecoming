@@ -2,7 +2,7 @@ import Link from "next/link";
 
 export const metadata = { title: "Delete your account | Homecoming" };
 
-const contact = process.env.NEXT_PUBLIC_CONTACT_EMAIL ?? "[YOUR CONTACT EMAIL]";
+const contact = process.env.NEXT_PUBLIC_CONTACT_EMAIL ?? "[homecomingrm@gmail.com]";
 
 export default function DeleteAccountPage() {
   return (
