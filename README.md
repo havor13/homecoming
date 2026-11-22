@@ -116,3 +116,9 @@ Below 800 px wide the sidebar is replaced by a top bar, a bottom tab bar (Home, 
 - **/delete-account:** a public page explaining how to delete an account, what is deleted and what may be kept. Google Play asks for a web link like this. Set `NEXT_PUBLIC_CONTACT_EMAIL` so it shows your contact address.
 - **Welcome checklist:** shown on Home until the member has added a photo, written a bio, joined a circle and posted. They can hide it.
 - After updating run `npm run db:push` (adds `Invite.note` and `User.welcomeDismissed`).
+
+## Sign-in protection, terms and unread messages
+
+- **Rate limiting:** after 5 wrong passwords for an email in 15 minutes, sign-in for that email is paused (it clears after 15 minutes or a correct sign-in). 20 failures from one address, or 10 wrong invite codes from one address in an hour, are also blocked. Attempts are stored in `LoginAttempt` and purged after a day.
+- **/terms:** a plain-language draft of the terms of use, linked from the footer and the join page. Fill in the date and contact address and have it reviewed.
+- **Unread messages:** a red count on Messages (sidebar and phone tab bar) and a dot next to each conversation with new messages. On installed phone apps the count also appears on the home-screen icon where the device supports it. Circle chats are not counted. Run `npm run db:push` after updating.

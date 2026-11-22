@@ -202,3 +202,9 @@ a.button { display: inline-flex; align-items: center; justify-content: center; m
 .nav a { gap: 12px; }
 .nav-icon { width: 24px; text-align: center; font-size: 18px; flex: none; }
 .nav a.on { background: var(--accent-soft); color: var(--accent-dark); font-weight: 700; }
+
+/* Unread messages */
+.count-badge { margin-left: auto; min-width: 22px; height: 22px; padding: 0 6px; border-radius: 999px; background: #b3261e; color: #fff; font-size: 12px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; }
+.count-badge.tab { position: absolute; top: 4px; left: 54%; margin: 0; min-width: 18px; height: 18px; font-size: 11px; }
+.m-tabs a { position: relative; }
+.unread-dot { display: inline-block; width: 10px; height: 10px; margin-left: 6px; border-radius: 50%; background: #b3261e; }

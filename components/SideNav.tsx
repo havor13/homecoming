@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useUnread } from "./useUnread";
 
 const ITEMS = [
   { href: "/", label: "Home", icon: "🏠" },
@@ -19,6 +20,7 @@ const ITEMS = [
 
 export function SideNav({ isModerator }: { isModerator: boolean }) {
   const path = usePathname();
+  const unread = useUnread();
   const items = isModerator ? [...ITEMS, { href: "/admin/reports", label: "Reports", icon: "🛡️" }] : ITEMS;
   const active = (href: string) => (href === "/" ? path === "/" : path.startsWith(href));
 
@@ -28,6 +30,9 @@ export function SideNav({ isModerator }: { isModerator: boolean }) {
         <Link key={i.href} href={i.href} className={active(i.href) ? "on" : ""} aria-current={active(i.href) ? "page" : undefined}>
           <span className="nav-icon" aria-hidden="true">{i.icon}</span>
           {i.label}
+          {i.href === "/messages" && unread > 0 && (
+            <span className="count-badge" aria-label={`${unread} conversations with new messages`}>{unread > 99 ? "99+" : unread}</span>
+          )}
         </Link>
       ))}
     </nav>

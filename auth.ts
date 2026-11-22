@@ -4,6 +4,7 @@ import bcrypt from "bcryptjs";
 import { z } from "zod";
 import { db } from "@/lib/db";
 import { authConfig } from "./auth.config";
+import { clearLoginFailures, clientIp, loginBlocked, recordFailure } from "@/lib/rate-limit";
 
 const credentialsSchema = z.object({
   email: z.string().email(),
@@ -15,18 +16,29 @@ export const { auth, signIn, signOut, handlers } = NextAuth({
   session: { strategy: "jwt" },
   providers: [
     Credentials({
-      async authorize(raw) {
+      async authorize(raw, request) {
         const parsed = credentialsSchema.safeParse(raw);
         if (!parsed.success) return null;
 
-        const user = await db.user.findUnique({
-          where: { email: parsed.data.email.toLowerCase() },
-        });
-        if (!user || user.suspendedAt) return null;
+        const email = parsed.data.email.toLowerCase();
+        const ip = clientIp(request.headers);
+
+        // Too many wrong tries: refuse without even checking the password.
+        if (await loginBlocked(email, ip)) return null;
+
+        const user = await db.user.findUnique({ where: { email } });
+        if (!user || user.suspendedAt) {
+          await recordFailure("LOGIN", email, ip);
+          return null;
+        }
 
         const ok = await bcrypt.compare(parsed.data.password, user.passwordHash);
-        if (!ok) return null;
+        if (!ok) {
+          await recordFailure("LOGIN", email, ip);
+          return null;
+        }
 
+        await clearLoginFailures(email);
         return { id: user.id, name: user.name, email: user.email };
       },
     }),

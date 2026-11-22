@@ -5,7 +5,9 @@ import { AuthError } from "next-auth";
 import { z } from "zod";
 import { db } from "@/lib/db";
 import { signIn, signOut } from "@/auth";
+import { headers } from "next/headers";
 import { isModeratorEmail } from "@/lib/moderation";
+import { clientIp, joinBlocked, recordFailure } from "@/lib/rate-limit";
 
 export type FormState = { error?: string } | undefined;
 
@@ -27,11 +29,15 @@ export async function join(_prev: FormState, formData: FormData): Promise<FormSt
   const data = parsed.data;
   const email = data.email.toLowerCase();
 
+  const ip = clientIp(await headers());
+  if (await joinBlocked(ip)) return { error: "Too many wrong invite codes. Please try again in an hour." };
+
   const invite = await db.invite.findUnique({
     where: { code: data.inviteCode.toUpperCase() },
     include: { issuer: { select: { email: true } } },
   });
   if (!invite || invite.usedById) {
+    await recordFailure("JOIN", null, ip);
     return { error: "That invite code is not valid or has already been used." };
   }
   if (await db.user.findUnique({ where: { email } })) {
@@ -94,7 +100,7 @@ export async function login(_prev: FormState, formData: FormData): Promise<FormS
       redirectTo: "/",
     });
   } catch (e) {
-    if (e instanceof AuthError) return { error: "Email or password is incorrect." };
+    if (e instanceof AuthError) return { error: "Email or password is incorrect. After 5 wrong tries, sign-in is paused for 15 minutes." };
     throw e;
   }
 }

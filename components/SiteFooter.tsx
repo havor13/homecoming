@@ -13,6 +13,7 @@ export function SiteFooter() {
         </p>
         <nav aria-label="Footer" className="site-footer-links">
           <Link href="/guidelines">Community guidelines</Link>
+          <Link href="/terms">Terms</Link>
           <Link href="/privacy">Privacy</Link>
           <Link href="/delete-account">Delete your account</Link>
           {contact && <a href={`mailto:${contact}`}>Contact</a>}

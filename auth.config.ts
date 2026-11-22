@@ -9,7 +9,7 @@ export const authConfig = {
       const loggedIn = !!auth?.user;
       const path = nextUrl.pathname;
       // Readable by anyone, signed in or not.
-      if (path === "/guidelines" || path === "/privacy" || path === "/delete-account") return true;
+      if (path === "/guidelines" || path === "/privacy" || path === "/delete-account" || path === "/terms") return true;
       const isPublic =
         path === "/login" || path === "/join" || path === "/forgot-password" || path === "/reset-password";
       if (isPublic) {

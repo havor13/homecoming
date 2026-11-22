@@ -50,7 +50,7 @@ export default function JoinPage() {
         {state?.error && <p className="error" role="alert">{state.error}</p>}
         <button className="primary" disabled={pending}>{pending ? "Creating account..." : "Create account"}</button>
         <p className="muted">Already a member? <Link href="/login">Sign in</Link></p>
-        <p className="muted">By creating an account you agree to the <Link href="/guidelines">community guidelines</Link> and the <Link href="/privacy">privacy notice</Link>.</p>
+        <p className="muted">By creating an account you agree to the <Link href="/terms">terms</Link>, the <Link href="/guidelines">community guidelines</Link> and the <Link href="/privacy">privacy notice</Link>.</p>
         <p className="muted">An independent community. Not affiliated with or endorsed by The Church of Jesus Christ of Latter-day Saints.</p>
       </form>
     </div>

@@ -3,6 +3,7 @@ import { auth } from "@/auth";
 import { db } from "@/lib/db";
 import { Avatar } from "@/components/Avatar";
 import { Chat } from "@/components/Chat";
+import { unreadThreadIds } from "@/lib/unread";
 
 export default async function MessagesPage({
   searchParams,
@@ -47,6 +48,13 @@ export default async function MessagesPage({
     : [];
   const messages = recent.reverse();
 
+  // Which other conversations have new messages, then mark the open one as read.
+  const unread = new Set(await unreadThreadIds(userId));
+  if (active) {
+    unread.delete(active.id);
+    await db.threadMember.updateMany({ where: { threadId: active.id, userId }, data: { lastReadAt: new Date() } });
+  }
+
   return (
     <>
       <div className="row">
@@ -76,6 +84,7 @@ export default async function MessagesPage({
                   <Avatar name={nameOf(th)} url={other?.avatarUrl} />
                   <div className="grow">
                     <strong>{nameOf(th)}</strong>
+                    {unread.has(th.id) && <span className="unread-dot" role="img" aria-label="New messages" />}
                     {th.title && <span className="chip" style={{ marginLeft: 6 }}>Group</span>}
                     <div className="muted" style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
                       {th.messages[0]?.body || (th.messages[0] ? "Sent an attachment" : "No messages yet")}

@@ -211,6 +211,8 @@ model ThreadMember {
   user     User   @relation(fields: [userId], references: [id], onDelete: Cascade)
   // Last time this person was emailed about this conversation (limits email to one per 30 minutes).
   lastEmailedAt DateTime?
+  // When this person last opened the conversation. Messages after this are unread.
+  lastReadAt    DateTime @default(now())
 
   @@id([threadId, userId])
 }
@@ -423,4 +425,16 @@ model PasswordReset {
   createdAt DateTime  @default(now())
 
   @@index([userId, createdAt])
+}
+
+// Failed sign-in and join attempts, used to slow down password and invite-code guessing.
+model LoginAttempt {
+  id        String   @id @default(cuid())
+  kind      String
+  email     String?
+  ip        String
+  createdAt DateTime @default(now())
+
+  @@index([kind, email, createdAt])
+  @@index([kind, ip, createdAt])
 }

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { logout } from "@/lib/actions/auth";
+import { useUnread } from "./useUnread";
 import { Avatar } from "./Avatar";
 
 type Item = { href: string; label: string; icon: string };
@@ -24,6 +25,7 @@ export function MobileNav({
 }) {
   const path = usePathname();
   const [open, setOpen] = useState(false);
+  const unread = useUnread();
 
   // Close the menu whenever the page changes, and on Escape.
   useEffect(() => setOpen(false), [path]);
@@ -65,6 +67,9 @@ export function MobileNav({
           <Link key={t.href} href={t.href} className={active(t.href) ? "on" : ""} aria-current={active(t.href) ? "page" : undefined}>
             <span aria-hidden="true">{t.icon}</span>
             {t.label}
+            {t.href === "/messages" && unread > 0 && (
+              <span className="count-badge tab" aria-label={`${unread} conversations with new messages`}>{unread > 99 ? "99+" : unread}</span>
+            )}
           </Link>
         ))}
         <button type="button" onClick={() => setOpen(true)} aria-label="More">
@@ -87,6 +92,7 @@ export function MobileNav({
                   <span aria-hidden="true">{i.icon}</span> {i.label}
                 </Link>
               ))}
+              <Link href="/terms"><span aria-hidden="true">📄</span> Terms of use</Link>
               <Link href="/guidelines"><span aria-hidden="true">📖</span> Community guidelines</Link>
               <Link href="/privacy"><span aria-hidden="true">🔒</span> Privacy</Link>
             </nav>
