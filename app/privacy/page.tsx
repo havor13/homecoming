@@ -7,7 +7,7 @@ export default function PrivacyPage() {
     <main className="doc">
       <h1>Privacy summary</h1>
       <p className="muted">
-        A plain-language summary of how Homecoming handles your information. Questions: [sampsonhavor43@gmail.com].
+        A plain-language summary of how Homecoming handles your information. Questions: [YOUR CONTACT EMAIL].
       </p>
 
       <h2>What we store</h2>
@@ -37,7 +37,7 @@ export default function PrivacyPage() {
       <h2>Your controls</h2>
       <ul>
         <li>Change who can see and message you, and block people, in <Link href="/settings">Settings</Link>.</li>
-        <li>Download your data, or delete your account and everything you posted, from the same page.</li>
+        <li>Download your data, or delete your account and everything you posted, from the same page. Details: <Link href="/delete-account">how to delete your account</Link>.</li>
         <li>Backups kept by our providers may hold deleted data for a short time before they expire.</li>
       </ul>
 

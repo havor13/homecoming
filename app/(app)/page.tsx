@@ -7,6 +7,7 @@ import { PostCard } from "@/components/PostCard";
 import { StoryTray } from "@/components/StoryTray";
 import { StatusForm } from "@/components/StatusForm";
 import { currentStatus } from "@/lib/member-status";
+import { WelcomeChecklist } from "@/components/WelcomeChecklist";
 import { PostComposer } from "@/components/PostComposer";
 
 export default async function FeedPage() {
@@ -22,7 +23,11 @@ export default async function FeedPage() {
   const adminCircleIds = new Set(memberships.filter((m) => m.role === "ADMIN").map((m) => m.circleId));
 
   const hidden = await hiddenUserIds(userId);
-  const meRow = await db.user.findUnique({ where: { id: userId }, select: { statusText: true, statusUpdatedAt: true } });
+  const meRow = await db.user.findUnique({
+    where: { id: userId },
+    select: { statusText: true, statusUpdatedAt: true, avatarUrl: true, bio: true, welcomeDismissed: true },
+  });
+  const myPosts = meRow && !meRow.welcomeDismissed ? await db.post.count({ where: { authorId: userId } }) : 0;
 
   const posts = await db.post.findMany({
     // Posts for everyone, plus posts in circles the person has joined. Blocked members are left out.
@@ -44,6 +49,16 @@ export default async function FeedPage() {
       <StoryTray viewerId={userId} />
       <div className="two">
         <div className="wide stack">
+          {meRow && !meRow.welcomeDismissed && (
+            <WelcomeChecklist
+              steps={[
+                { label: "Add a profile photo", hint: "People recognise each other faster with a face.", href: "/profile", done: !!meRow.avatarUrl },
+                { label: "Tell people about yourself", hint: "A line or two about your mission and what you do now.", href: "/profile", done: !!meRow.bio },
+                { label: "Join a mission circle", hint: "Find people from your mission, language or city.", href: "/circles", done: circles.length > 0 },
+                { label: "Post a short hello", hint: "Introduce yourself in the box just below.", href: "/#post-body", done: myPosts > 0 },
+              ]}
+            />
+          )}
           <PostComposer userId={userId} circles={circles.map((c) => ({ id: c.id, name: c.name }))} />
 
           {posts.map((p) => (

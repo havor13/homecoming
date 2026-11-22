@@ -64,6 +64,8 @@ model User {
   // Email notifications
   emailMessages     Boolean           @default(true)
   emailActivity     Boolean           @default(true)
+  // Hides the welcome checklist on Home.
+  welcomeDismissed  Boolean           @default(false)
   status       VerifyStatus @default(PENDING)
   createdAt    DateTime     @default(now())
 
@@ -106,6 +108,8 @@ model Invite {
   usedById  String?   @unique
   usedBy    User?     @relation("UsedInvite", fields: [usedById], references: [id])
   usedAt    DateTime?
+  // Who the code is for, so the member who made it can keep track.
+  note      String?
   createdAt DateTime  @default(now())
 }
 

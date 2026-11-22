@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { auth } from "@/auth";
 import { db } from "@/lib/db";
-import { createInvite, verifyMember } from "@/lib/actions/community";
+import { verifyMember } from "@/lib/actions/community";
 import { ProfileForm } from "@/components/ProfileForm";
 
 export default async function ProfilePage() {
@@ -63,16 +63,10 @@ export default async function ProfilePage() {
           <section className="card">
             <h2>Invite a returned missionary</h2>
             {verified ? (
-              <form action={createInvite}><button className="primary">Create invite code</button></form>
+              <Link href="/invites" className="button">Invite members</Link>
             ) : (
               <p className="muted">You can invite others once you are confirmed.</p>
             )}
-            {me.invitesIssued.map((i) => (
-              <div key={i.id} className="row">
-                <code>{i.code}</code>
-                <span className="muted">{i.usedBy ? `Used by ${i.usedBy.name}` : "Not used yet"}</span>
-              </div>
-            ))}
           </section>
         </aside>
       </div>

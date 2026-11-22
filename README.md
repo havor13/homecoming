@@ -109,3 +109,10 @@ Homecoming has a web app manifest, icons and a tiny service worker, so members c
 ## Phone layout
 
 Below 800 px wide the sidebar is replaced by a top bar, a bottom tab bar (Home, Circles, Messages, People, More) and a slide-in menu with the rest of the links and Sign out. Desktop layout is unchanged.
+
+## Invites, account deletion page and welcome checklist
+
+- **/invites:** confirmed members create invite codes (up to 10 unused), add a private note about who it is for, copy a ready-made invitation message or a join link (`/join?code=...`), remove unused codes, see who joined, and confirm the people they invited. Moderators (`MODERATOR_EMAILS`) can create up to 20 codes at a time and the people they invite are confirmed straight away.
+- **/delete-account:** a public page explaining how to delete an account, what is deleted and what may be kept. Google Play asks for a web link like this. Set `NEXT_PUBLIC_CONTACT_EMAIL` so it shows your contact address.
+- **Welcome checklist:** shown on Home until the member has added a photo, written a bio, joined a circle and posted. They can hide it.
+- After updating run `npm run db:push` (adds `Invite.note` and `User.welcomeDismissed`).

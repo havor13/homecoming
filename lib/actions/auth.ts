@@ -5,6 +5,7 @@ import { AuthError } from "next-auth";
 import { z } from "zod";
 import { db } from "@/lib/db";
 import { signIn, signOut } from "@/auth";
+import { isModeratorEmail } from "@/lib/moderation";
 
 export type FormState = { error?: string } | undefined;
 
@@ -26,7 +27,10 @@ export async function join(_prev: FormState, formData: FormData): Promise<FormSt
   const data = parsed.data;
   const email = data.email.toLowerCase();
 
-  const invite = await db.invite.findUnique({ where: { code: data.inviteCode.toUpperCase() } });
+  const invite = await db.invite.findUnique({
+    where: { code: data.inviteCode.toUpperCase() },
+    include: { issuer: { select: { email: true } } },
+  });
   if (!invite || invite.usedById) {
     return { error: "That invite code is not valid or has already been used." };
   }
@@ -54,8 +58,8 @@ export async function join(_prev: FormState, formData: FormData): Promise<FormSt
           language: data.language || null,
           yearsServed: data.yearsServed || null,
           invitedById: invite.issuerId,
-          // A member who invites someone vouches for them. Seed invites (no issuer) verify directly.
-          status: invite.issuerId ? "PENDING" : "VERIFIED",
+          // A member who invites someone vouches for them. Seed and moderator invites verify directly.
+          status: invite.issuerId && !isModeratorEmail(invite.issuer?.email) ? "PENDING" : "VERIFIED",
         },
       });
       await tx.invite.update({ where: { id: invite.id }, data: { usedById: user.id } });

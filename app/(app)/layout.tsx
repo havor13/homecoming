@@ -4,6 +4,7 @@ import { auth } from "@/auth";
 import { db } from "@/lib/db";
 import { logout } from "@/lib/actions/auth";
 import { Avatar } from "@/components/Avatar";
+import { SideNav } from "@/components/SideNav";
 import { MobileNav } from "@/components/MobileNav";
 import { isModeratorEmail } from "@/lib/moderation";
 
@@ -29,18 +30,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
             <span>{me.name}</span>
           </Link>
         )}
-        <nav className="nav" aria-label="Main">
-          <Link href="/">Home</Link>
-          <Link href="/circles">Mission circles</Link>
-          <Link href="/messages">Messages</Link>
-          <Link href="/people">People</Link>
-          <Link href="/jobs">Jobs</Link>
-          <Link href="/mentors">Mentors</Link>
-          <Link href="/events">Reunions and events</Link>
-          <Link href="/profile">My profile</Link>
-          <Link href="/settings">Privacy and settings</Link>
-          {me && isModeratorEmail(me.email) && <Link href="/admin/reports">Reports</Link>}
-        </nav>
+        <SideNav isModerator={!!me && isModeratorEmail(me.email)} />
         <form action={logout}>
           <button type="submit">Sign out</button>
         </form>

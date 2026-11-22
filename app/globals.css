@@ -197,3 +197,8 @@ a.button { display: inline-flex; align-items: center; justify-content: center; m
   .m-drawer nav a { display: flex; align-items: center; gap: 10px; min-height: 48px; padding: 0 12px; border-radius: 12px; color: var(--ink); text-decoration: none; font-weight: 500; }
   .m-drawer nav a.on, .m-drawer nav a:hover { background: var(--accent-soft); }
 }
+
+/* Sidebar icons and current page */
+.nav a { gap: 12px; }
+.nav-icon { width: 24px; text-align: center; font-size: 18px; flex: none; }
+.nav a.on { background: var(--accent-soft); color: var(--accent-dark); font-weight: 700; }

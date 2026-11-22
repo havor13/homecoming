@@ -1,11 +1,18 @@
 "use client";
 
 import Link from "next/link";
-import { useActionState } from "react";
+import { useActionState, useEffect, useRef } from "react";
 import { join } from "@/lib/actions/auth";
 
 export default function JoinPage() {
   const [state, action, pending] = useActionState(join, undefined);
+  const codeInput = useRef<HTMLInputElement>(null);
+
+  // An invite link looks like /join?code=HOME-ABC123 and fills the code in.
+  useEffect(() => {
+    const code = new URLSearchParams(window.location.search).get("code");
+    if (code && codeInput.current) codeInput.current.value = code;
+  }, []);
 
   return (
     <div className="auth">
@@ -14,7 +21,7 @@ export default function JoinPage() {
         <p className="muted">Open to returned missionaries who are invited by another member.</p>
         <div className="field">
           <label htmlFor="inviteCode">Invite code</label>
-          <input id="inviteCode" name="inviteCode" placeholder="HOME-0000" required />
+          <input id="inviteCode" name="inviteCode" ref={codeInput} placeholder="HOME-0000" required />
         </div>
         <div className="field">
           <label htmlFor="name">Full name</label>

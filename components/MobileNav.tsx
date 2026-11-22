@@ -44,6 +44,7 @@ export function MobileNav({
     { href: "/jobs", label: "Jobs", icon: "💼" },
     { href: "/mentors", label: "Mentors", icon: "🤝" },
     { href: "/events", label: "Reunions and events", icon: "📅" },
+    { href: "/invites", label: "Invite members", icon: "💌" },
     { href: "/stories/new", label: "Add a story", icon: "✨" },
     { href: "/profile", label: "My profile", icon: "🙂" },
     { href: "/settings", label: "Privacy and settings", icon: "⚙️" },
