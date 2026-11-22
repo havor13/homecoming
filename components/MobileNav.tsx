@@ -1,0 +1,100 @@
+"use client";
+
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { useEffect, useState } from "react";
+import { logout } from "@/lib/actions/auth";
+import { Avatar } from "./Avatar";
+
+type Item = { href: string; label: string; icon: string };
+
+const TABS: Item[] = [
+  { href: "/", label: "Home", icon: "🏠" },
+  { href: "/circles", label: "Circles", icon: "👥" },
+  { href: "/messages", label: "Messages", icon: "💬" },
+  { href: "/people", label: "People", icon: "🔎" },
+];
+
+export function MobileNav({
+  user,
+  isModerator,
+}: {
+  user: { name: string; avatarUrl: string | null } | null;
+  isModerator: boolean;
+}) {
+  const path = usePathname();
+  const [open, setOpen] = useState(false);
+
+  // Close the menu whenever the page changes, and on Escape.
+  useEffect(() => setOpen(false), [path]);
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && setOpen(false);
+    document.addEventListener("keydown", onKey);
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      document.body.style.overflow = "";
+    };
+  }, [open]);
+
+  const active = (href: string) => (href === "/" ? path === "/" : path.startsWith(href));
+
+  const more: Item[] = [
+    { href: "/jobs", label: "Jobs", icon: "💼" },
+    { href: "/mentors", label: "Mentors", icon: "🤝" },
+    { href: "/events", label: "Reunions and events", icon: "📅" },
+    { href: "/stories/new", label: "Add a story", icon: "✨" },
+    { href: "/profile", label: "My profile", icon: "🙂" },
+    { href: "/settings", label: "Privacy and settings", icon: "⚙️" },
+    ...(isModerator ? [{ href: "/admin/reports", label: "Reports", icon: "🛡️" }] : []),
+  ];
+
+  return (
+    <div className="mobile-only">
+      <header className="m-top">
+        <Link href="/" className="m-brand">Homecoming</Link>
+        <button type="button" className="m-menu-btn" onClick={() => setOpen(true)} aria-label="Open menu" aria-expanded={open}>
+          ☰
+        </button>
+      </header>
+
+      <nav className="m-tabs" aria-label="Main">
+        {TABS.map((t) => (
+          <Link key={t.href} href={t.href} className={active(t.href) ? "on" : ""} aria-current={active(t.href) ? "page" : undefined}>
+            <span aria-hidden="true">{t.icon}</span>
+            {t.label}
+          </Link>
+        ))}
+        <button type="button" onClick={() => setOpen(true)} aria-label="More">
+          <span aria-hidden="true">☰</span>
+          More
+        </button>
+      </nav>
+
+      {open && (
+        <div className="m-overlay" onClick={() => setOpen(false)}>
+          <div className="m-drawer" role="dialog" aria-modal="true" aria-label="Menu" onClick={(e) => e.stopPropagation()}>
+            <div className="row">
+              {user && <Avatar name={user.name} url={user.avatarUrl} size={40} />}
+              <strong className="grow">{user?.name ?? "Menu"}</strong>
+              <button type="button" onClick={() => setOpen(false)} aria-label="Close menu">✕</button>
+            </div>
+            <nav className="stack" style={{ gap: 4 }} aria-label="More">
+              {more.map((i) => (
+                <Link key={i.href} href={i.href} className={active(i.href) ? "on" : ""}>
+                  <span aria-hidden="true">{i.icon}</span> {i.label}
+                </Link>
+              ))}
+              <Link href="/guidelines"><span aria-hidden="true">📖</span> Community guidelines</Link>
+              <Link href="/privacy"><span aria-hidden="true">🔒</span> Privacy</Link>
+            </nav>
+            <form action={logout}>
+              <button type="submit" style={{ width: "100%" }}>Sign out</button>
+            </form>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}

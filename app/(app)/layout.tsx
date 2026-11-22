@@ -4,6 +4,7 @@ import { auth } from "@/auth";
 import { db } from "@/lib/db";
 import { logout } from "@/lib/actions/auth";
 import { Avatar } from "@/components/Avatar";
+import { MobileNav } from "@/components/MobileNav";
 import { isModeratorEmail } from "@/lib/moderation";
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
@@ -19,6 +20,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
 
   return (
     <div className="shell">
+      <MobileNav user={me ? { name: me.name, avatarUrl: me.avatarUrl } : null} isModerator={!!me && isModeratorEmail(me.email)} />
       <aside className="side">
         <div className="brand">Homecoming</div>
         {me && (

@@ -105,3 +105,7 @@ Posts can include one video (MP4, WebM or MOV, up to 50 MB). The browser uploads
 ## Install on phones (PWA)
 
 Homecoming has a web app manifest, icons and a tiny service worker, so members can add it to their home screen (iPhone: Share, then Add to Home Screen; Android: menu, then Install app). The service worker only shows an offline page when there is no connection. It never caches posts or messages. It is registered only in production builds, so it does not run in `npm run dev`. Settings explains how to install.
+
+## Phone layout
+
+Below 800 px wide the sidebar is replaced by a top bar, a bottom tab bar (Home, Circles, Messages, People, More) and a slide-in menu with the rest of the links and Sign out. Desktop layout is unchanged.

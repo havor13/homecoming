@@ -167,3 +167,33 @@ a.button { display: inline-flex; align-items: center; justify-content: center; m
 
 /* Post video */
 .post-video { width: 100%; max-height: 480px; border-radius: 12px; background: #000; }
+
+/* Phone layout: a top bar, a bottom tab bar and a menu drawer instead of the sidebar. */
+.mobile-only { display: none; }
+@media (max-width: 800px) {
+  .mobile-only { display: block; }
+  .side { display: none; }
+  .shell { display: block; }
+  .main { padding: 16px 16px 96px; gap: 20px; }
+  h1 { font-size: 26px; }
+  .card { padding: 16px; }
+  .auth { padding: 16px; }
+  .auth .card { padding: 20px; }
+  .site-footer { padding-bottom: 72px; }
+  .two > .wide, .two > .rail { flex: 1 1 100%; max-width: none; }
+  .cards > .card { max-width: none; }
+
+  .m-top { position: sticky; top: 0; z-index: 30; display: flex; align-items: center; justify-content: space-between; height: 56px; padding: 0 16px; background: var(--card); border-bottom: 1px solid var(--border); }
+  .m-brand { font-family: Georgia, serif; font-size: 22px; font-weight: 700; color: var(--accent-dark); text-decoration: none; }
+  .m-menu-btn { width: 48px; min-height: 48px; font-size: 22px; border: 0; background: transparent; }
+
+  .m-tabs { position: fixed; left: 0; right: 0; bottom: 0; z-index: 30; display: flex; background: var(--card); border-top: 1px solid var(--border); padding-bottom: env(safe-area-inset-bottom); }
+  .m-tabs a, .m-tabs button { flex: 1; min-height: 60px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; font-size: 12px; color: var(--muted); background: transparent; border: 0; text-decoration: none; padding: 4px 2px; }
+  .m-tabs a span, .m-tabs button span { font-size: 20px; line-height: 1; }
+  .m-tabs a.on { color: var(--accent-dark); font-weight: 700; }
+
+  .m-overlay { position: fixed; inset: 0; z-index: 40; background: rgba(17, 35, 30, 0.45); display: flex; justify-content: flex-end; }
+  .m-drawer { width: min(320px, 88vw); height: 100%; background: var(--card); padding: 16px; display: flex; flex-direction: column; gap: 16px; overflow-y: auto; }
+  .m-drawer nav a { display: flex; align-items: center; gap: 10px; min-height: 48px; padding: 0 12px; border-radius: 12px; color: var(--ink); text-decoration: none; font-weight: 500; }
+  .m-drawer nav a.on, .m-drawer nav a:hover { background: var(--accent-soft); }
+}
