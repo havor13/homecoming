@@ -1,5 +1,6 @@
 "use server";
 
+import { notifyModerators } from "@/lib/notifications";
 import { z } from "zod";
 import { db } from "@/lib/db";
 import { requireUserId } from "@/lib/session";
@@ -107,5 +108,6 @@ export async function createReport(_prev: FormState, formData: FormData): Promis
       snippet: target.snippet,
     },
   });
+  await notifyModerators("A new report needs review", "/admin/reports");
   return { ok: true };
 }

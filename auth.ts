@@ -39,18 +39,23 @@ export const { auth, signIn, signOut, handlers } = NextAuth({
         }
 
         await clearLoginFailures(email);
-        return { id: user.id, name: user.name, email: user.email };
+        const signedIn = { id: user.id, name: user.name, email: user.email, sv: user.sessionVersion };
+        return signedIn;
       },
     }),
   ],
   callbacks: {
     ...authConfig.callbacks,
     jwt({ token, user }) {
-      if (user?.id) token.sub = user.id;
+      if (user?.id) {
+        token.sub = user.id;
+        token.sv = (user as { sv?: number }).sv ?? 0;
+      }
       return token;
     },
     session({ session, token }) {
       if (token.sub) session.user.id = token.sub;
+      session.user.sv = typeof token.sv === "number" ? token.sv : 0;
       return session;
     },
   },

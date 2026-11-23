@@ -2,7 +2,12 @@
 
 import { createHash, randomBytes } from "node:crypto";
 import bcrypt from "bcryptjs";
+import { headers } from "next/headers";
 import { after } from "next/server";
+import { AuthError } from "next-auth";
+import { signIn, signOut } from "@/auth";
+import { requireUserId } from "@/lib/session";
+import { clientIp, loginBlocked, recordFailure } from "@/lib/rate-limit";
 import { z } from "zod";
 import { db } from "@/lib/db";
 import { appUrl, layout, sendEmail } from "@/lib/email";
@@ -73,7 +78,8 @@ export async function resetPassword(_prev: FormState, formData: FormData): Promi
 
   const passwordHash = await bcrypt.hash(parsed.data.password, 12);
   await db.$transaction([
-    db.user.update({ where: { id: reset.userId }, data: { passwordHash } }),
+    // Raising sessionVersion signs the account out everywhere else.
+    db.user.update({ where: { id: reset.userId }, data: { passwordHash, sessionVersion: { increment: 1 } } }),
     db.passwordReset.update({ where: { id: reset.id }, data: { usedAt: new Date() } }),
     // Any other unused links stop working.
     db.passwordReset.deleteMany({ where: { userId: reset.userId, usedAt: null, id: { not: reset.id } } }),
@@ -94,4 +100,64 @@ export async function resetPassword(_prev: FormState, formData: FormData): Promi
   );
 
   return { ok: true };
+}
+
+const changeSchema = z
+  .object({
+    current: z.string().min(1, "Enter your current password."),
+    password: z.string().min(8, "The new password must be at least 8 characters."),
+    confirm: z.string(),
+  })
+  .refine((v) => v.password === v.confirm, { message: "The two new passwords do not match.", path: ["confirm"] });
+
+/** Change your password while signed in. Every other device is signed out; this one stays signed in. */
+export async function changePassword(_prev: FormState, formData: FormData): Promise<FormState> {
+  const userId = await requireUserId();
+  const parsed = changeSchema.safeParse(Object.fromEntries(formData));
+  if (!parsed.success) return { error: parsed.error.issues[0].message };
+
+  const user = await db.user.findUnique({
+    where: { id: userId },
+    select: { email: true, name: true, passwordHash: true },
+  });
+  if (!user) return { error: "Account not found." };
+
+  const ip = clientIp(await headers());
+  if (await loginBlocked(user.email, ip)) return { error: "Too many wrong passwords. Try again in 15 minutes." };
+  if (!(await bcrypt.compare(parsed.data.current, user.passwordHash))) {
+    await recordFailure("LOGIN", user.email, ip);
+    return { error: "Your current password is not correct." };
+  }
+
+  const passwordHash = await bcrypt.hash(parsed.data.password, 12);
+  await db.user.update({ where: { id: userId }, data: { passwordHash, sessionVersion: { increment: 1 } } });
+
+  after(() =>
+    sendEmail({
+      to: user.email,
+      subject: "Your Homecoming password was changed",
+      text: `Hi ${user.name},\n\nYour password was just changed. If this was not you, reset it again right away: ${appUrl()}/forgot-password`,
+      html: layout({
+        heading: "Your password was changed",
+        body: "<p>Your Homecoming password was just changed, and other devices were signed out. If this was not you, reset it again right away.</p>",
+        buttonLabel: "Reset it again",
+        buttonUrl: `${appUrl()}/forgot-password`,
+      }),
+    }),
+  );
+
+  // Sign this device in again with the new version, so only the other devices are signed out.
+  try {
+    await signIn("credentials", { email: user.email, password: parsed.data.password, redirectTo: "/settings?password=changed" });
+  } catch (e) {
+    if (e instanceof AuthError) return { error: "Password changed, but signing back in failed. Please sign in again." };
+    throw e; // the redirect
+  }
+}
+
+/** Signs this device and every other device out. */
+export async function signOutEverywhere() {
+  const userId = await requireUserId();
+  await db.user.update({ where: { id: userId }, data: { sessionVersion: { increment: 1 } } });
+  await signOut({ redirectTo: "/login" });
 }

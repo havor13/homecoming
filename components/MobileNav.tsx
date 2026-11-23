@@ -25,7 +25,7 @@ export function MobileNav({
 }) {
   const path = usePathname();
   const [open, setOpen] = useState(false);
-  const unread = useUnread();
+  const { messages: unread, notifications } = useUnread();
 
   // Close the menu whenever the page changes, and on Escape.
   useEffect(() => setOpen(false), [path]);
@@ -57,9 +57,16 @@ export function MobileNav({
     <div className="mobile-only">
       <header className="m-top">
         <Link href="/" className="m-brand">Homecoming</Link>
-        <button type="button" className="m-menu-btn" onClick={() => setOpen(true)} aria-label="Open menu" aria-expanded={open}>
-          ☰
-        </button>
+        <div className="row" style={{ gap: 0, flexWrap: "nowrap" }}>
+          <Link href="/search" className="m-icon-btn" aria-label="Search">🔍</Link>
+          <Link href="/notifications" className="m-icon-btn" aria-label={notifications > 0 ? `Notifications, ${notifications} new` : "Notifications"}>
+            🔔
+            {notifications > 0 && <span className="count-badge tab">{notifications > 99 ? "99+" : notifications}</span>}
+          </Link>
+          <button type="button" className="m-menu-btn" onClick={() => setOpen(true)} aria-label="Open menu" aria-expanded={open}>
+            ☰
+          </button>
+        </div>
       </header>
 
       <nav className="m-tabs" aria-label="Main">

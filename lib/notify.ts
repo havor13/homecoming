@@ -1,5 +1,6 @@
 import { db } from "@/lib/db";
 import { appUrl, escapeHtml, layout, sendEmail } from "@/lib/email";
+import { createNotification } from "@/lib/notifications";
 
 const settingsFooter = () =>
   `You can turn these emails off in <a href="${appUrl()}/settings">your settings</a>. Homecoming is an independent community, not affiliated with The Church of Jesus Christ of Latter-day Saints.`;
@@ -63,13 +64,21 @@ export async function notifyComment(postId: string, commenterId: string) {
     select: { authorId: true, author: { select: { email: true, emailActivity: true, suspendedAt: true } } },
   });
   if (!post || post.authorId === commenterId) return;
-  if (!post.author.emailActivity || post.author.suspendedAt) return;
+  if (post.author.suspendedAt) return;
   if (await blockedBetween(post.authorId, commenterId)) return;
 
   const commenter = await db.user.findUnique({ where: { id: commenterId }, select: { name: true } });
   if (!commenter) return;
 
-  const url = `${appUrl()}/`;
+  await createNotification({
+    userId: post.authorId,
+    type: "COMMENT",
+    text: `${commenter.name} commented on your post`,
+    href: `/posts/${postId}`,
+  });
+  if (!post.author.emailActivity) return;
+
+  const url = `${appUrl()}/posts/${postId}`;
   await sendEmail({
     to: post.author.email,
     subject: `${commenter.name} commented on your post`,
@@ -90,7 +99,15 @@ export async function notifyMentorRequest(mentorId: string, fromId: string, thre
     db.user.findUnique({ where: { id: mentorId }, select: { email: true, emailActivity: true, suspendedAt: true } }),
     db.user.findUnique({ where: { id: fromId }, select: { name: true } }),
   ]);
-  if (!mentor || !from || !mentor.emailActivity || mentor.suspendedAt) return;
+  if (!mentor || !from || mentor.suspendedAt) return;
+
+  await createNotification({
+    userId: mentorId,
+    type: "MENTOR",
+    text: `${from.name} asked for your mentoring`,
+    href: `/messages?t=${threadId}`,
+  });
+  if (!mentor.emailActivity) return;
 
   const url = `${appUrl()}/messages?t=${threadId}`;
   await sendEmail({

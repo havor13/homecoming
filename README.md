@@ -122,3 +122,10 @@ Below 800 px wide the sidebar is replaced by a top bar, a bottom tab bar (Home, 
 - **Rate limiting:** after 5 wrong passwords for an email in 15 minutes, sign-in for that email is paused (it clears after 15 minutes or a correct sign-in). 20 failures from one address, or 10 wrong invite codes from one address in an hour, are also blocked. Attempts are stored in `LoginAttempt` and purged after a day.
 - **/terms:** a plain-language draft of the terms of use, linked from the footer and the join page. Fill in the date and contact address and have it reviewed.
 - **Unread messages:** a red count on Messages (sidebar and phone tab bar) and a dot next to each conversation with new messages. On installed phone apps the count also appears on the home-screen icon where the device supports it. Circle chats are not counted. Run `npm run db:push` after updating.
+
+## Sign out other devices, notifications and search
+
+- **Sign out other devices:** changing your password (Settings, or the reset link) signs every other device out. Settings also has "Sign out on all devices". Implemented with `User.sessionVersion`, which is copied into the sign-in token and checked on each page.
+- **Notifications (`/notifications`):** a bell with a count. Created for comments on your posts, mentoring requests, someone joining with your invite, being confirmed, and (for moderators) new reports. Messages keep their own unread count. Items older than 60 days are cleared.
+- **Search (`/search`):** people, circles, posts and jobs. It respects blocks, profile privacy and private circles, and only matches home city when the member shows it. Search results open posts at `/posts/[id]`.
+- Run `npm run db:push` for the new column and table.

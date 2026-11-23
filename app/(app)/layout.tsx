@@ -13,10 +13,11 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   const me = session?.user?.id
     ? await db.user.findUnique({
         where: { id: session.user.id },
-        select: { name: true, avatarUrl: true, email: true, suspendedAt: true },
+        select: { name: true, avatarUrl: true, email: true, suspendedAt: true, sessionVersion: true },
       })
     : null;
   if (session?.user?.id && !me) redirect("/api/signout");
+  if (me && (session?.user?.sv ?? 0) !== me.sessionVersion) redirect("/api/signout");
   if (me?.suspendedAt) redirect("/suspended");
 
   return (

@@ -8,6 +8,7 @@ import { signIn, signOut } from "@/auth";
 import { headers } from "next/headers";
 import { isModeratorEmail } from "@/lib/moderation";
 import { clientIp, joinBlocked, recordFailure } from "@/lib/rate-limit";
+import { createNotification } from "@/lib/notifications";
 
 export type FormState = { error?: string } | undefined;
 
@@ -82,6 +83,15 @@ export async function join(_prev: FormState, formData: FormData): Promise<FormSt
       return { error: "That invite code has already been used." };
     }
     throw e;
+  }
+
+  if (invite.issuerId) {
+    await createNotification({
+      userId: invite.issuerId,
+      type: "INVITE",
+      text: `${data.name} joined with your invite. Confirm them when you are ready.`,
+      href: "/invites",
+    });
   }
 
   try {

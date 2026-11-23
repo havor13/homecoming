@@ -1,5 +1,6 @@
 "use server";
 
+import { createNotification } from "@/lib/notifications";
 import { randomBytes } from "node:crypto";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
@@ -45,5 +46,11 @@ export async function verifyMember(userId: string) {
   // Only the member who invited someone can confirm them.
   if (!target || target.invitedById !== voucherId) return;
   await db.user.update({ where: { id: userId }, data: { status: "VERIFIED" } });
+  await createNotification({
+    userId,
+    type: "CONFIRMED",
+    text: "You have been confirmed. You can now invite other returned missionaries.",
+    href: "/invites",
+  });
   revalidatePath("/profile");
 }

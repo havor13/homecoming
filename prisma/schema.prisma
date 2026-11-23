@@ -66,6 +66,8 @@ model User {
   emailActivity     Boolean           @default(true)
   // Hides the welcome checklist on Home.
   welcomeDismissed  Boolean           @default(false)
+  // Raised when the password changes or someone chooses "sign out everywhere". Older sign-ins stop working.
+  sessionVersion    Int               @default(0)
   status       VerifyStatus @default(PENDING)
   createdAt    DateTime     @default(now())
 
@@ -95,6 +97,7 @@ model User {
   reportsAbout   Report[] @relation("ReportsAbout")
   stories        Story[]
   passwordResets PasswordReset[]
+  notifications  Notification[]
   storyViews     StoryView[]
   blocksMade     Block[]  @relation("Blocker")
   blocksReceived Block[]  @relation("Blocked")
@@ -437,4 +440,18 @@ model LoginAttempt {
 
   @@index([kind, email, createdAt])
   @@index([kind, ip, createdAt])
+}
+
+// Things that happen to you: shown in the notifications list with a bell count.
+model Notification {
+  id        String    @id @default(cuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type      String
+  text      String
+  href      String
+  readAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([userId, readAt, createdAt])
 }

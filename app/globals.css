@@ -208,3 +208,15 @@ a.button { display: inline-flex; align-items: center; justify-content: center; m
 .count-badge.tab { position: absolute; top: 4px; left: 54%; margin: 0; min-width: 18px; height: 18px; font-size: 11px; }
 .m-tabs a { position: relative; }
 .unread-dot { display: inline-block; width: 10px; height: 10px; margin-left: 6px; border-radius: 50%; background: #b3261e; }
+
+/* Notifications and search */
+.notice { display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-radius: 12px; border: 1px solid var(--border); background: var(--card); color: var(--ink); text-decoration: none; min-height: 56px; }
+.notice.new { border-color: var(--accent); background: var(--accent-soft); font-weight: 600; }
+.search-form { display: flex; gap: 8px; max-width: 560px; }
+.search-form input { flex: 1; }
+.result { display: flex; align-items: center; gap: 12px; padding: 10px 0; text-decoration: none; color: var(--ink); min-height: 48px; }
+.result mark { background: #ffe9a8; color: inherit; border-radius: 3px; }
+@media (max-width: 800px) {
+  .m-icon-btn { position: relative; display: inline-flex; align-items: center; justify-content: center; width: 48px; min-height: 48px; font-size: 20px; text-decoration: none; }
+  .m-icon-btn .count-badge.tab { top: 6px; left: 26px; }
+}

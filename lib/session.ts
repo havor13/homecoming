@@ -12,9 +12,11 @@ export async function requireUserId() {
 
   const user = await db.user.findUnique({
     where: { id: session.user.id },
-    select: { suspendedAt: true },
+    select: { suspendedAt: true, sessionVersion: true },
   });
   if (!user) redirect("/api/signout");
+  // Signed in before the password changed, or before "sign out everywhere": sign in again.
+  if ((session.user.sv ?? 0) !== user.sessionVersion) redirect("/api/signout");
   if (user.suspendedAt) redirect("/suspended");
 
   return session.user.id;

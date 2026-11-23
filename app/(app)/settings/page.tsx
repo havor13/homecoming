@@ -4,10 +4,12 @@ import { db } from "@/lib/db";
 import { toggleBlock } from "@/lib/actions/privacy";
 import { Avatar } from "@/components/Avatar";
 import { DeleteAccountForm } from "@/components/DeleteAccountForm";
+import { ChangePasswordForm } from "@/components/ChangePasswordForm";
 import { NotificationForm } from "@/components/NotificationForm";
 import { PrivacyForm } from "@/components/PrivacyForm";
 
-export default async function SettingsPage() {
+export default async function SettingsPage({ searchParams }: { searchParams: Promise<{ password?: string }> }) {
+  const { password } = await searchParams;
   const session = await auth();
   const userId = session!.user.id;
 
@@ -43,6 +45,8 @@ export default async function SettingsPage() {
         <p><strong>Android:</strong> open this site in Chrome, tap the menu (three dots), then <em>Install app</em> or <em>Add to Home screen</em>.</p>
         <p className="muted">It then opens full-screen with its own icon, like any other app.</p>
       </section>
+
+      <ChangePasswordForm justChanged={password === "changed"} />
 
       <NotificationForm emailMessages={me.emailMessages} emailActivity={me.emailActivity} />
 
