@@ -2,7 +2,7 @@ import Link from "next/link";
 
 export const metadata = { title: "Terms of use | Homecoming" };
 
-const contact = process.env.NEXT_PUBLIC_CONTACT_EMAIL ?? "[YOUR CONTACT EMAIL]";
+const contact = process.env.NEXT_PUBLIC_CONTACT_EMAIL ?? "[homecoingrm@gmail.com]";
 
 export default function TermsPage() {
   return (
@@ -10,7 +10,7 @@ export default function TermsPage() {
       <h1>Terms of use</h1>
       <p className="muted">
         A plain-language draft. These terms are not legal advice and should be reviewed before launch. Questions:{" "}
-        {contact}. Last updated: [DATE].
+        {contact}. Last updated: [24/11/2026].
       </p>
 
       <h2>Who we are</h2>
