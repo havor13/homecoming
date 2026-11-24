@@ -22,6 +22,21 @@ export function InviteForm({ moderator }: { moderator: boolean }) {
         <label htmlFor="invite-note">Who is it for? (optional, only you see this)</label>
         <input id="invite-note" name="note" maxLength={60} placeholder="For example, Elder Mensah, Ghana Accra Mission" />
       </div>
+      <div className="field">
+        <label htmlFor="invite-uses">How many people can use this code?</label>
+        <input id="invite-uses" name="maxUses" type="number" min={1} max={moderator ? 200 : 10} defaultValue={1} />
+        <span className="muted">Use 1 for one person. A higher number lets you share one code, for example with a group.</span>
+      </div>
+      <div className="field">
+        <label htmlFor="invite-expiry">How long is it valid?</label>
+        <select id="invite-expiry" name="expiryDays" defaultValue="0">
+          <option value="0">No end date (single-person codes only)</option>
+          <option value="1">1 day</option>
+          <option value="7">7 days</option>
+          <option value="30">30 days</option>
+          <option value="90">90 days</option>
+        </select>
+      </div>
       {moderator && (
         <div className="field">
           <label htmlFor="invite-count">How many codes?</label>

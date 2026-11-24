@@ -37,9 +37,12 @@ export async function join(_prev: FormState, formData: FormData): Promise<FormSt
     where: { code: data.inviteCode.toUpperCase() },
     include: { issuer: { select: { email: true } } },
   });
-  if (!invite || invite.usedById) {
+  if (!invite || invite.usedById || invite.useCount >= invite.maxUses) {
     await recordFailure("JOIN", null, ip);
     return { error: "That invite code is not valid or has already been used." };
+  }
+  if (invite.expiresAt && invite.expiresAt < new Date()) {
+    return { error: "That invite code has expired. Ask the person who invited you for a new one." };
   }
   if (await db.user.findUnique({ where: { email } })) {
     return { error: "An account with that email already exists." };
@@ -49,10 +52,16 @@ export async function join(_prev: FormState, formData: FormData): Promise<FormSt
 
   try {
     await db.$transaction(async (tx) => {
-      // Claim the invite first so two people can never use the same code.
+      // Claim a use first so a code can never be used more times than allowed, even at the same moment.
+      const now = new Date();
       const claimed = await tx.invite.updateMany({
-        where: { id: invite.id, usedById: null },
-        data: { usedAt: new Date() },
+        where: {
+          id: invite.id,
+          usedById: null,
+          useCount: { lt: invite.maxUses },
+          OR: [{ expiresAt: null }, { expiresAt: { gt: now } }],
+        },
+        data: { usedAt: now, useCount: { increment: 1 } },
       });
       if (claimed.count !== 1) throw new Error("INVITE_TAKEN");
 
@@ -65,11 +74,13 @@ export async function join(_prev: FormState, formData: FormData): Promise<FormSt
           language: data.language || null,
           yearsServed: data.yearsServed || null,
           invitedById: invite.issuerId,
+          joinedViaId: invite.id,
           // A member who invites someone vouches for them. Seed and moderator invites verify directly.
           status: invite.issuerId && !isModeratorEmail(invite.issuer?.email) ? "PENDING" : "VERIFIED",
         },
       });
-      await tx.invite.update({ where: { id: invite.id }, data: { usedById: user.id } });
+      // Single-use codes also record who used them, which older screens rely on.
+      if (invite.maxUses === 1) await tx.invite.update({ where: { id: invite.id }, data: { usedById: user.id } });
 
       // Put the new member in the circle that matches their mission, if one exists.
       const slug = data.missionName.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");

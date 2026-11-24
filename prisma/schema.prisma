@@ -76,6 +76,8 @@ model User {
   invitees      User[]   @relation("Invites")
   invitesIssued Invite[] @relation("IssuedInvites")
   inviteUsed    Invite?  @relation("UsedInvite")
+  joinedViaId   String?
+  joinedVia     Invite?  @relation("JoinedViaInvite", fields: [joinedViaId], references: [id], onDelete: SetNull)
 
   createdCircles Circle[]       @relation("CircleCreator")
   memberships    Membership[]
@@ -113,6 +115,11 @@ model Invite {
   usedAt    DateTime?
   // Who the code is for, so the member who made it can keep track.
   note      String?
+  // A code can be shared with several people. maxUses is how many may join with it.
+  maxUses   Int       @default(1)
+  useCount  Int       @default(0)
+  expiresAt DateTime?
+  members   User[]    @relation("JoinedViaInvite")
   createdAt DateTime  @default(now())
 }
 

@@ -16,7 +16,7 @@ export default async function InvitesPage() {
     select: {
       status: true,
       email: true,
-      invitesIssued: { orderBy: { createdAt: "desc" }, include: { usedBy: { select: { name: true, status: true } } } },
+      invitesIssued: { orderBy: { createdAt: "desc" }, include: { usedBy: { select: { name: true, status: true } }, members: { select: { id: true, name: true, status: true } } } },
       invitees: { where: { status: "PENDING" }, select: { id: true, name: true, missionName: true } },
     },
   });
@@ -27,8 +27,15 @@ export default async function InvitesPage() {
   const shareText = (code: string) =>
     `I'd like to invite you to Homecoming, a private community for returned missionaries. It is independent and not run by the Church. Join here: ${base}/join?code=${code}  (your invite code is ${code})`;
 
-  const unused = me.invitesIssued.filter((i) => !i.usedBy);
-  const used = me.invitesIssued.filter((i) => i.usedBy);
+  const now = new Date();
+  const isActive = (i: (typeof me.invitesIssued)[number]) =>
+    !i.usedBy && i.useCount < i.maxUses && (!i.expiresAt || i.expiresAt > now);
+  const unused = me.invitesIssued.filter((i) => isActive(i) || (!i.usedBy && i.useCount === 0));
+  // Everyone who joined, whether through a single-use or a shared code.
+  const joined = me.invitesIssued.flatMap((i) => {
+    const people = i.members.length > 0 ? i.members : i.usedBy ? [{ id: i.id, ...i.usedBy }] : [];
+    return people.map((p) => ({ key: `${i.id}-${p.id}`, code: i.code, name: p.name, status: p.status }));
+  });
 
   return (
     <>
@@ -64,13 +71,19 @@ export default async function InvitesPage() {
       )}
 
       <section className="stack" style={{ maxWidth: 560 }}>
-        <h2>Waiting to be used ({unused.length})</h2>
+        <h2>Active codes ({unused.length})</h2>
         {unused.length === 0 && <p className="muted">No unused codes. Create one above.</p>}
         {unused.map((i) => (
           <div key={i.id} className="card">
             <div className="row">
               <code style={{ fontSize: 18 }}>{i.code}</code>
               {i.note && <span className="muted">for {i.note}</span>}
+              {i.maxUses > 1 && <span className="chip">{i.useCount} of {i.maxUses} used</span>}
+              {i.expiresAt && (
+                <span className={i.expiresAt > now ? "muted" : "chip amber"}>
+                  {i.expiresAt > now ? `valid until ${i.expiresAt.toLocaleDateString("en-US", { month: "short", day: "numeric" })}` : "Expired"}
+                </span>
+              )}
               <span className="muted" style={{ marginLeft: "auto" }}>{timeAgo(i.createdAt)}</span>
             </div>
             <div className="row">
@@ -85,15 +98,15 @@ export default async function InvitesPage() {
         ))}
       </section>
 
-      {used.length > 0 && (
+      {joined.length > 0 && (
         <section className="stack" style={{ maxWidth: 560 }}>
-          <h2>Joined ({used.length})</h2>
-          {used.map((i) => (
-            <div key={i.id} className="row">
+          <h2>Joined ({joined.length})</h2>
+          {joined.map((i) => (
+            <div key={i.key} className="row">
               <code>{i.code}</code>
-              <span>{i.usedBy?.name}</span>
-              <span className={i.usedBy?.status === "VERIFIED" ? "chip" : "chip amber"}>
-                {i.usedBy?.status === "VERIFIED" ? "Confirmed" : "Waiting for confirmation"}
+              <span>{i.name}</span>
+              <span className={i.status === "VERIFIED" ? "chip" : "chip amber"}>
+                {i.status === "VERIFIED" ? "Confirmed" : "Waiting for confirmation"}
               </span>
             </div>
           ))}
