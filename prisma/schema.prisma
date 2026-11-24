@@ -76,6 +76,7 @@ model User {
   invitees      User[]   @relation("Invites")
   invitesIssued Invite[] @relation("IssuedInvites")
   inviteUsed    Invite?  @relation("UsedInvite")
+  pushSubscriptions PushSubscription[]
   joinedViaId   String?
   joinedVia     Invite?  @relation("JoinedViaInvite", fields: [joinedViaId], references: [id], onDelete: SetNull)
 
@@ -157,6 +158,8 @@ model Post {
   authorId  String
   circleId  String?
   createdAt DateTime @default(now())
+  editedAt  DateTime?
+  pinnedAt  DateTime?
   author    User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
   circle    Circle?  @relation(fields: [circleId], references: [id], onDelete: SetNull)
 
@@ -461,4 +464,17 @@ model Notification {
   createdAt DateTime  @default(now())
 
   @@index([userId, readAt, createdAt])
+}
+
+/// A phone or browser that has agreed to receive push notifications.
+model PushSubscription {
+  id        String   @id @default(cuid())
+  userId    String
+  endpoint  String   @unique
+  p256dh    String
+  auth      String
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
 }

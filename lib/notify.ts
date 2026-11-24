@@ -1,6 +1,7 @@
 import { db } from "@/lib/db";
 import { appUrl, escapeHtml, layout, sendEmail } from "@/lib/email";
 import { createNotification } from "@/lib/notifications";
+import { sendPush } from "@/lib/push";
 
 const settingsFooter = () =>
   `You can turn these emails off in <a href="${appUrl()}/settings">your settings</a>. Homecoming is an independent community, not affiliated with The Church of Jesus Christ of Latter-day Saints.`;
@@ -22,6 +23,16 @@ export async function notifyNewMessage(threadId: string, senderId: string) {
 
   const sender = await db.user.findUnique({ where: { id: senderId }, select: { name: true } });
   if (!sender) return;
+
+  // Push alerts go to everyone who turned them on, even when email alerts are off. The text never includes the message.
+  const everyone = await db.threadMember.findMany({
+    where: { threadId, userId: { not: senderId }, user: { suspendedAt: null } },
+    select: { userId: true },
+  });
+  for (const m of everyone) {
+    if (await blockedBetween(m.userId, senderId)) continue;
+    await sendPush(m.userId, { body: `${sender.name} sent you a message`, url: `/messages?t=${threadId}`, tag: `thread-${threadId}` });
+  }
 
   const cutoff = new Date(Date.now() - 30 * 60 * 1000);
   const members = await db.threadMember.findMany({

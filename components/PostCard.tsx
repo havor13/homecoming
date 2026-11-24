@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { deleteComment, deletePost } from "@/lib/actions/posts";
+import { deleteComment, deletePost, setPinned } from "@/lib/actions/posts";
 import { startDirectThread } from "@/lib/actions/chat";
 import { currentStatus } from "@/lib/member-status";
 import { timeAgo } from "@/lib/format";
@@ -8,6 +8,7 @@ import type { PostWithMeta } from "@/lib/queries";
 import { Attachments } from "./Attachments";
 import { Avatar } from "./Avatar";
 import { CommentForm } from "./CommentForm";
+import { EditPostForm } from "./EditPostForm";
 import { ReactionBar } from "./ReactionBar";
 import { ReportButton } from "./ReportButton";
 
@@ -15,20 +16,24 @@ export function PostCard({
   post,
   viewerId,
   canModerate,
+  canPin = false,
 }: {
   post: PostWithMeta;
   viewerId: string;
   canModerate: boolean;
+  /** Moderators, and the admins of the post's circle. */
+  canPin?: boolean;
 }) {
   const canDelete = post.authorId === viewerId || canModerate;
 
   return (
-    <article className="card">
+    <article className={post.pinnedAt ? "card pinned" : "card"}>
+      {post.pinnedAt && <div className="pin-label">📌 Pinned</div>}
       <div className="row">
         <Avatar name={post.author.name} url={post.author.avatarUrl} />
         <div className="grow">
           <Link href={`/people/${post.authorId}`}><strong>{post.author.name}</strong></Link>
-          <div className="muted">{post.author.missionName} · {timeAgo(post.createdAt)}</div>
+          <div className="muted">{post.author.missionName} · {timeAgo(post.createdAt)}{post.editedAt ? " · edited" : ""}</div>
           {currentStatus(post.author) && <div className="status-line">{currentStatus(post.author)}</div>}
         </div>
         {post.circle && (
@@ -37,6 +42,7 @@ export function PostCard({
       </div>
 
       {post.body && <p style={{ whiteSpace: "pre-wrap" }}>{post.body}</p>}
+      {post.authorId === viewerId && <EditPostForm postId={post.id} body={post.body} />}
       <Attachments items={post.attachments} />
 
       <div className="row">
@@ -47,6 +53,11 @@ export function PostCard({
           </form>
         )}
         {post.authorId !== viewerId && <ReportButton targetType="POST" targetId={post.id} />}
+        {canPin && (
+          <form action={setPinned.bind(null, post.id, !post.pinnedAt)}>
+            <button>{post.pinnedAt ? "Unpin" : "Pin"}</button>
+          </form>
+        )}
         {canDelete && (
           <form action={deletePost.bind(null, post.id)} style={{ marginLeft: "auto" }}>
             <button className="danger">Delete</button>

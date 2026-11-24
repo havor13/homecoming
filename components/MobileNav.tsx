@@ -50,7 +50,12 @@ export function MobileNav({
     { href: "/stories/new", label: "Add a story", icon: "✨" },
     { href: "/profile", label: "My profile", icon: "🙂" },
     { href: "/settings", label: "Privacy and settings", icon: "⚙️" },
-    ...(isModerator ? [{ href: "/admin/reports", label: "Reports", icon: "🛡️" }] : []),
+    ...(isModerator
+      ? [
+          { href: "/admin/reports", label: "Reports", icon: "🛡️" },
+          { href: "/admin/members", label: "Members", icon: "📋" },
+        ]
+      : []),
   ];
 
   return (

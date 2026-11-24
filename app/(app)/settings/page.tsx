@@ -7,6 +7,7 @@ import { DeleteAccountForm } from "@/components/DeleteAccountForm";
 import { ChangePasswordForm } from "@/components/ChangePasswordForm";
 import { NotificationForm } from "@/components/NotificationForm";
 import { PrivacyForm } from "@/components/PrivacyForm";
+import { PushToggle } from "@/components/PushToggle";
 
 export default async function SettingsPage({ searchParams }: { searchParams: Promise<{ password?: string }> }) {
   const { password } = await searchParams;
@@ -47,6 +48,8 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
       </section>
 
       <ChangePasswordForm justChanged={password === "changed"} />
+
+      <PushToggle />
 
       <NotificationForm emailMessages={me.emailMessages} emailActivity={me.emailActivity} />
 

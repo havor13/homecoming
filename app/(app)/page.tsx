@@ -9,6 +9,7 @@ import { StatusForm } from "@/components/StatusForm";
 import { currentStatus } from "@/lib/member-status";
 import { WelcomeChecklist } from "@/components/WelcomeChecklist";
 import { PostComposer } from "@/components/PostComposer";
+import { isModeratorEmail } from "@/lib/moderation";
 
 export default async function FeedPage() {
   const session = await auth();
@@ -25,23 +26,31 @@ export default async function FeedPage() {
   const hidden = await hiddenUserIds(userId);
   const meRow = await db.user.findUnique({
     where: { id: userId },
-    select: { statusText: true, statusUpdatedAt: true, avatarUrl: true, bio: true, welcomeDismissed: true },
+    select: { email: true, statusText: true, statusUpdatedAt: true, avatarUrl: true, bio: true, welcomeDismissed: true },
   });
   const myPosts = meRow && !meRow.welcomeDismissed ? await db.post.count({ where: { authorId: userId } }) : 0;
 
-  const posts = await db.post.findMany({
-    // Posts for everyone, plus posts in circles the person has joined. Blocked members are left out.
-    where: {
-      authorId: { notIn: hidden },
-      OR: [
-        { circleId: null },
-        { circle: { members: { some: { userId, status: "ACTIVE" } } } },
-      ],
-    },
+  const isModerator = isModeratorEmail(meRow?.email);
+
+  // Posts for everyone, plus posts in circles the person has joined. Blocked members are left out.
+  const visible = {
+    authorId: { notIn: hidden },
+    OR: [{ circleId: null }, { circle: { members: { some: { userId, status: "ACTIVE" as const } } } }],
+  };
+  // Up to three pinned posts stay at the top. The rest follow, newest first.
+  const pinned = await db.post.findMany({
+    where: { ...visible, pinnedAt: { not: null } },
+    orderBy: { pinnedAt: "desc" },
+    take: 3,
+    include: postInclude(hidden),
+  });
+  const rest = await db.post.findMany({
+    where: { ...visible, id: { notIn: pinned.map((p) => p.id) } },
     orderBy: { createdAt: "desc" },
     take: 50,
     include: postInclude(hidden),
   });
+  const posts = [...pinned, ...rest];
 
   return (
     <>
@@ -67,6 +76,7 @@ export default async function FeedPage() {
               post={p}
               viewerId={userId}
               canModerate={p.circleId !== null && adminCircleIds.has(p.circleId)}
+              canPin={isModerator || (p.circleId !== null && adminCircleIds.has(p.circleId))}
             />
           ))}
           {posts.length === 0 && <p className="muted">No posts yet. Be the first to share.</p>}

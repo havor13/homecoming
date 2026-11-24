@@ -1,11 +1,13 @@
 import { db } from "@/lib/db";
 import { isModeratorEmail } from "@/lib/moderation";
+import { sendPush } from "@/lib/push";
 
 type NotificationType = "COMMENT" | "MENTOR" | "INVITE" | "CONFIRMED" | "REPORT";
 
 /** Adds an item to someone's notifications list. Old ones (60 days) are cleared out as we go. */
 export async function createNotification(opts: { userId: string; type: NotificationType; text: string; href: string }) {
   await db.notification.create({ data: opts });
+  await sendPush(opts.userId, { body: opts.text, url: opts.href });
   await db.notification.deleteMany({
     where: { userId: opts.userId, createdAt: { lt: new Date(Date.now() - 60 * 24 * 60 * 60 * 1000) } },
   });

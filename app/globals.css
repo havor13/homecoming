@@ -238,3 +238,7 @@ dialog.viewer::backdrop { background: rgba(0, 0, 0, 0.7); }
 .viewer-text { width: 100%; align-self: flex-start; margin: 0; white-space: pre-wrap; word-break: break-word; font-size: 14px; }
 .viewer-msg { padding: 12px; text-align: center; }
 .viewer-nav { display: flex; align-items: center; justify-content: center; gap: 16px; padding: 10px; border-top: 1px solid var(--border); }
+
+/* Pinned posts */
+.card.pinned { border-color: var(--accent); }
+.pin-label { font-size: 14px; font-weight: 600; color: var(--accent-dark); }

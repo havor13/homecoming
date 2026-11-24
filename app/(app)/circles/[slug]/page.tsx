@@ -133,12 +133,14 @@ async function CirclePosts({ circleId, userId, isAdmin }: { circleId: string; us
     take: 50,
     include: postInclude(hidden),
   });
+  // Pinned posts first, most recently pinned first.
+  posts.sort((a, b) => (b.pinnedAt?.getTime() ?? 0) - (a.pinnedAt?.getTime() ?? 0) || b.createdAt.getTime() - a.createdAt.getTime());
 
   return (
     <div className="stack" style={{ maxWidth: 700 }}>
       <PostComposer userId={userId} circles={[]} fixedCircleId={circleId} />
       {posts.map((p) => (
-        <PostCard key={p.id} post={p} viewerId={userId} canModerate={isAdmin} />
+        <PostCard key={p.id} post={p} viewerId={userId} canModerate={isAdmin} canPin={isAdmin} />
       ))}
       {posts.length === 0 && <p className="muted">No posts in this circle yet.</p>}
     </div>

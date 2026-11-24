@@ -6,6 +6,7 @@ import { notifyComment } from "@/lib/notify";
 import { z } from "zod";
 import { db } from "@/lib/db";
 import { requireUserId } from "@/lib/session";
+import { isModeratorEmail } from "@/lib/moderation";
 import { activeMembership, canViewPost } from "@/lib/access";
 import { head } from "@vercel/blob";
 import { deleteBlobs, pickFiles, tryUpload } from "@/lib/upload";
@@ -135,5 +136,43 @@ export async function deleteComment(commentId: string) {
   if (!allowed) return;
 
   await db.comment.delete({ where: { id: commentId } });
+  refresh();
+}
+
+export async function editPost(_prev: FormState, formData: FormData): Promise<FormState> {
+  const userId = await requireUserId();
+  const postId = String(formData.get("postId") ?? "");
+
+  const body = textSchema.safeParse(formData.get("body") ?? "");
+  if (!body.success) return { error: body.error.issues[0].message };
+
+  const post = await db.post.findUnique({ where: { id: postId }, select: { authorId: true, body: true, _count: { select: { attachments: true } } } });
+  // Only the author can change what a post says.
+  if (!post || post.authorId !== userId) return { error: "You can only edit your own posts." };
+  if (!body.data && post._count.attachments === 0) return { error: "A post needs some text or an attachment." };
+  if (body.data === post.body) return { ok: true };
+
+  await db.post.update({ where: { id: postId }, data: { body: body.data, editedAt: new Date() } });
+  refresh();
+  return { ok: true };
+}
+
+/** Moderators can pin any post. A circle's admins can pin posts in their own circle. */
+export async function setPinned(postId: string, pinned: boolean) {
+  const userId = await requireUserId();
+  const [user, post] = await Promise.all([
+    db.user.findUnique({ where: { id: userId }, select: { email: true } }),
+    db.post.findUnique({ where: { id: postId }, select: { circleId: true } }),
+  ]);
+  if (!post) return;
+
+  let allowed = isModeratorEmail(user?.email);
+  if (!allowed && post.circleId) {
+    const m = await activeMembership(userId, post.circleId);
+    allowed = m?.role === "ADMIN";
+  }
+  if (!allowed) return;
+
+  await db.post.update({ where: { id: postId }, data: { pinnedAt: pinned ? new Date() : null } });
   refresh();
 }

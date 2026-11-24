@@ -24,7 +24,9 @@ export function SideNav({ isModerator }: { isModerator: boolean }) {
   const path = usePathname();
   const { messages, notifications } = useUnread();
   const countFor = (href: string) => (href === "/messages" ? messages : href === "/notifications" ? notifications : 0);
-  const items = isModerator ? [...ITEMS, { href: "/admin/reports", label: "Reports", icon: "🛡️" }] : ITEMS;
+  const items = isModerator
+    ? [...ITEMS, { href: "/admin/reports", label: "Reports", icon: "🛡️" }, { href: "/admin/members", label: "Members", icon: "📋" }]
+    : ITEMS;
   const active = (href: string) => (href === "/" ? path === "/" : path.startsWith(href));
 
   return (
