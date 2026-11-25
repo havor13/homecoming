@@ -8,6 +8,7 @@ import { timeAgo } from "@/lib/format";
 import { hiddenUserIds } from "@/lib/privacy";
 import { Avatar } from "@/components/Avatar";
 import { ReportButton } from "@/components/ReportButton";
+import { Attachments } from "@/components/Attachments";
 
 const LISTING_DAYS = 60;
 
@@ -42,7 +43,10 @@ export default async function JobsPage({
     },
     orderBy: { createdAt: "desc" },
     take: 50,
-    include: { postedBy: { select: { id: true, name: true, avatarUrl: true, missionName: true } } },
+    include: {
+      postedBy: { select: { id: true, name: true, avatarUrl: true, missionName: true } },
+      attachments: true,
+    },
   });
 
   return (
@@ -86,6 +90,7 @@ export default async function JobsPage({
               <summary style={{ cursor: "pointer", fontWeight: 600 }}>Read the details</summary>
               <p style={{ whiteSpace: "pre-wrap", marginTop: 8 }}>{j.description}</p>
             </details>
+            <Attachments items={j.attachments} />
 
             <div className="row">
               <Avatar name={j.postedBy.name} url={j.postedBy.avatarUrl} size={32} />

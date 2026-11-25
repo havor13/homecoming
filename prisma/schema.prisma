@@ -201,6 +201,8 @@ model Attachment {
   createdAt   DateTime @default(now())
   postId      String?
   messageId   String?
+  jobId       String?
+  job         Job?     @relation(fields: [jobId], references: [id], onDelete: Cascade)
   post        Post?    @relation(fields: [postId], references: [id], onDelete: Cascade)
   message     Message? @relation(fields: [messageId], references: [id], onDelete: Cascade)
 }
@@ -318,6 +320,7 @@ model Job {
   postedById  String
   postedBy    User     @relation(fields: [postedById], references: [id], onDelete: Cascade)
   createdAt   DateTime @default(now())
+  attachments Attachment[]
 
   @@index([createdAt])
 }

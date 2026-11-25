@@ -6,6 +6,7 @@ import { createPost } from "@/lib/actions/posts";
 import { ACCEPT_ATTR, MAX_VIDEO_BYTES, VIDEO_ACCEPT_ATTR, VIDEO_FOLDER, VIDEO_TYPES } from "@/lib/upload-config";
 import { EmojiPicker } from "./EmojiPicker";
 import { useActionForm } from "./useActionForm";
+import { usePasteFiles } from "./usePasteFiles";
 
 export function PostComposer({
   circles,
@@ -17,6 +18,7 @@ export function PostComposer({
   userId: string;
 }) {
   const [progress, setProgress] = useState<number | null>(null);
+  const paste = usePasteFiles("post-files");
 
   // A video is too big for a server action, so it goes straight to storage first and the
   // post only carries its address.
@@ -52,9 +54,10 @@ export function PostComposer({
   return (
     <form ref={ref} onSubmit={onSubmit} className="card">
       <label htmlFor="post-body">Share with your mission family</label>
-      <textarea id="post-body" name="body" rows={3} maxLength={2000} placeholder="A memory, a question, a job lead, a reunion idea" />
+      <textarea id="post-body" name="body" rows={3} maxLength={2000} placeholder="A memory, a question, a job lead, a reunion idea" onPaste={paste.onPaste} />
+      {paste.note && <p role="status" className="muted">{paste.note}</p>}
       <div className="field">
-        <label htmlFor="post-files" className="muted">Add photos or files (4 MB total)</label>
+        <label htmlFor="post-files" className="muted">Add photos or files (4 MB total). You can also paste an image above.</label>
         <input id="post-files" name="files" type="file" multiple accept={ACCEPT_ATTR} className="file-input" />
       </div>
       <div className="field">

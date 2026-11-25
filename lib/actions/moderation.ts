@@ -52,9 +52,14 @@ export async function removeReportedContent(reportId: string) {
       }
       break;
     }
-    case "JOB":
-      await db.job.deleteMany({ where: { id: report.targetId } });
+    case "JOB": {
+      const job = await db.job.findUnique({ where: { id: report.targetId }, include: { attachments: true } });
+      if (job) {
+        await db.job.delete({ where: { id: job.id } });
+        await deleteBlobs(job.attachments.map((a) => a.url));
+      }
       break;
+    }
     default:
       return; // A member report has no content to remove.
   }

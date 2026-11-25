@@ -10,6 +10,7 @@ import { requireUserId } from "@/lib/session";
 import { findOrCreateDirectThread } from "@/lib/threads";
 import { canMessage } from "@/lib/privacy";
 import { JOB_TYPES } from "@/lib/careers";
+import { deleteBlobs, pickFiles, tryUpload } from "@/lib/upload";
 import type { FormState } from "@/lib/types";
 
 const DAY = 24 * 60 * 60 * 1000;
@@ -54,8 +55,12 @@ export async function createJob(_prev: FormState, formData: FormData): Promise<F
   });
   if (today >= 5) return { error: "You can post up to 5 jobs a day. Try again tomorrow." };
 
+  const upload = await tryUpload(pickFiles(formData, "files"), "jobs", userId);
+  if (!upload.ok) return { error: upload.error };
+
   await db.job.create({
     data: {
+      attachments: { create: upload.files },
       title: data.title,
       company: data.company,
       location: data.location,
@@ -73,7 +78,10 @@ export async function createJob(_prev: FormState, formData: FormData): Promise<F
 
 export async function deleteJob(jobId: string) {
   const userId = await requireUserId();
-  await db.job.deleteMany({ where: { id: jobId, postedById: userId } });
+  const job = await db.job.findFirst({ where: { id: jobId, postedById: userId }, include: { attachments: true } });
+  if (!job) return;
+  await db.job.delete({ where: { id: job.id } });
+  await deleteBlobs(job.attachments.map((a) => a.url));
   revalidatePath("/jobs");
 }
 

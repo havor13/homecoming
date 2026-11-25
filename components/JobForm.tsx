@@ -2,6 +2,7 @@
 
 import { createJob } from "@/lib/actions/careers";
 import { JOB_TYPES, JOB_TYPE_LABEL } from "@/lib/careers";
+import { ACCEPT_ATTR } from "@/lib/upload-config";
 import { useActionForm } from "./useActionForm";
 
 export function JobForm() {
@@ -38,6 +39,11 @@ export function JobForm() {
       <div className="field">
         <label htmlFor="applyUrl">Apply link (optional)</label>
         <input id="applyUrl" name="applyUrl" type="url" maxLength={500} placeholder="https://" />
+      </div>
+      <div className="field">
+        <label htmlFor="job-files">Attach a file (optional)</label>
+        <input id="job-files" name="files" type="file" multiple accept={ACCEPT_ATTR} className="file-input" />
+        <span className="muted">For example the full job description or a flyer. PDF, Word, Excel, PowerPoint, text or images, up to 4 MB in total.</span>
       </div>
       <label className="row" style={{ fontWeight: 400 }}>
         <input type="checkbox" name="remote" style={{ width: 20, minHeight: 20 }} />
