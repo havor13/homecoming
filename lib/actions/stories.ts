@@ -1,5 +1,6 @@
 "use server";
 
+import { after } from "next/server";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
@@ -10,6 +11,9 @@ import { createNotification } from "@/lib/notifications";
 import { deleteBlobs, pickFiles, tryUpload } from "@/lib/upload";
 import { STORY_BG_KEYS, STORY_HOURS, STORY_MAX_CHARS } from "@/lib/stories";
 import { storyWhere } from "@/lib/story-queries";
+import { findOrCreateDirectThread } from "@/lib/threads";
+import { notifyNewMessage } from "@/lib/notify";
+import { canMessage } from "@/lib/privacy";
 import type { FormState } from "@/lib/types";
 
 const schema = z.object({
@@ -113,4 +117,28 @@ export async function reactToStory(storyId: string, emoji: string) {
     text: `${me?.name ?? "Someone"} reacted ${emoji} to your story`,
     href: `/stories/${story.authorId}`,
   });
+}
+
+/** Sends a private reply to someone's story as a direct message. Blocks and message settings apply. */
+export async function replyToStory(_prev: FormState, formData: FormData): Promise<FormState> {
+  const userId = await requireUserId();
+  const storyId = String(formData.get("storyId") ?? "");
+
+  const reply = z.string().trim().min(1, "Write a reply first.").max(500, "Replies can be up to 500 characters.").safeParse(formData.get("body"));
+  if (!reply.success) return { error: reply.error.issues[0].message };
+
+  const story = await db.story.findFirst({
+    where: { id: storyId, authorId: { not: userId }, ...(await storyWhere(userId)) },
+    select: { authorId: true },
+  });
+  if (!story) return { error: "This story is no longer available." };
+  if (!(await canMessage(userId, story.authorId))) return { error: "You can't message this person." };
+
+  const thread = await findOrCreateDirectThread(userId, story.authorId);
+  await db.message.create({
+    data: { threadId: thread.id, senderId: userId, body: `↩️ Replied to your story: ${reply.data}` },
+  });
+  after(() => notifyNewMessage(thread.id, userId));
+  revalidatePath("/", "layout");
+  return { ok: true };
 }

@@ -7,6 +7,7 @@ import { REACTIONS } from "@/lib/reactions";
 import { bgColor } from "@/lib/stories";
 import { timeLeftLabel } from "@/lib/format";
 import { Avatar } from "./Avatar";
+import { StoryReplyForm } from "./StoryReplyForm";
 import { ReportButton } from "./ReportButton";
 
 export type ViewerStory = {
@@ -116,6 +117,7 @@ export function StoryViewer({
               </button>
             ))}
           </div>
+          <StoryReplyForm key={story.id} storyId={story.id} name={author.name} />
           <ReportButton targetType="STORY" targetId={story.id} />
         </>
       )}
