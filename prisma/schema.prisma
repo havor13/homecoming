@@ -102,6 +102,7 @@ model User {
   passwordResets PasswordReset[]
   notifications  Notification[]
   storyViews     StoryView[]
+  storyReactions StoryReaction[]
   blocksMade     Block[]  @relation("Blocker")
   blocksReceived Block[]  @relation("Blocked")
 }
@@ -415,6 +416,7 @@ model Story {
   createdAt DateTime @default(now())
   expiresAt DateTime
   views     StoryView[]
+  reactions StoryReaction[]
 
   @@index([expiresAt])
   @@index([authorId, expiresAt])
@@ -425,6 +427,18 @@ model StoryView {
   story     Story    @relation(fields: [storyId], references: [id], onDelete: Cascade)
   userId    String
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@id([storyId, userId])
+}
+
+// One reaction per person per story. Choosing a different emoji replaces it.
+model StoryReaction {
+  storyId   String
+  story     Story    @relation(fields: [storyId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  emoji     String
   createdAt DateTime @default(now())
 
   @@id([storyId, userId])

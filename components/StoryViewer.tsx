@@ -1,8 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
-import { deleteStory, markStorySeen } from "@/lib/actions/stories";
+import { startTransition, useEffect, useState } from "react";
+import { deleteStory, markStorySeen, reactToStory } from "@/lib/actions/stories";
+import { REACTIONS } from "@/lib/reactions";
 import { bgColor } from "@/lib/stories";
 import { timeLeftLabel } from "@/lib/format";
 import { Avatar } from "./Avatar";
@@ -15,6 +16,8 @@ export type ViewerStory = {
   bg: string;
   expiresAt: string;
   viewers: string[]; // only filled in for your own stories
+  myReaction: string | null;
+  reactions: { name: string; emoji: string }[]; // only filled in for your own stories
 };
 
 export function StoryViewer({
@@ -28,6 +31,17 @@ export function StoryViewer({
 }) {
   const [i, setI] = useState(0);
   const story = stories[i];
+  // What I reacted with, by story. Updated right away so the tap feels instant.
+  const [mine, setMine] = useState<Record<string, string | null>>(() =>
+    Object.fromEntries(stories.map((s) => [s.id, s.myReaction])),
+  );
+
+  function react(emoji: string) {
+    setMine((m) => ({ ...m, [story.id]: m[story.id] === emoji ? null : emoji }));
+    startTransition(async () => {
+      await reactToStory(story.id, emoji);
+    });
+  }
 
   useEffect(() => {
     if (!isOwn) void markStorySeen(story.id);
@@ -65,6 +79,16 @@ export function StoryViewer({
 
       {isOwn ? (
         <section className="card">
+          <h2>Reactions ({story.reactions.length})</h2>
+          {story.reactions.length === 0 ? (
+            <p className="muted">No reactions yet.</p>
+          ) : (
+            <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
+              {story.reactions.map((r, n) => (
+                <li key={n}><span aria-hidden="true">{r.emoji}</span> {r.name}</li>
+              ))}
+            </ul>
+          )}
           <h2>Seen by {story.viewers.length}</h2>
           {story.viewers.length === 0 ? (
             <p className="muted">No one has watched this yet.</p>
@@ -77,7 +101,23 @@ export function StoryViewer({
           </form>
         </section>
       ) : (
-        <ReportButton targetType="STORY" targetId={story.id} />
+        <>
+          <div className="row" role="group" aria-label="React to this story" style={{ gap: 4 }}>
+            {REACTIONS.map((emoji) => (
+              <button
+                key={emoji}
+                type="button"
+                className={`emoji-btn${mine[story.id] === emoji ? " on" : ""}`}
+                aria-pressed={mine[story.id] === emoji}
+                aria-label={`React ${emoji}`}
+                onClick={() => react(emoji)}
+              >
+                {emoji}
+              </button>
+            ))}
+          </div>
+          <ReportButton targetType="STORY" targetId={story.id} />
+        </>
       )}
     </div>
   );

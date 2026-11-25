@@ -10,6 +10,7 @@ const ICON: Record<string, string> = {
   INVITE: "💌",
   CONFIRMED: "✅",
   REPORT: "🛡️",
+  STORY: "✨",
 };
 
 export default async function NotificationsPage() {

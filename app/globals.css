@@ -242,3 +242,7 @@ dialog.viewer::backdrop { background: rgba(0, 0, 0, 0.7); }
 /* Pinned posts */
 .card.pinned { border-color: var(--accent); }
 .pin-label { font-size: 14px; font-weight: 600; color: var(--accent-dark); }
+
+/* Story reactions */
+.emoji-btn.on { background: var(--accent-soft); box-shadow: inset 0 0 0 2px var(--accent-dark); }
+.story-card ~ .row .emoji-btn { min-width: 44px; min-height: 44px; }

@@ -2,7 +2,7 @@ import { db } from "@/lib/db";
 import { isModeratorEmail } from "@/lib/moderation";
 import { sendPush } from "@/lib/push";
 
-type NotificationType = "COMMENT" | "MENTOR" | "INVITE" | "CONFIRMED" | "REPORT";
+type NotificationType = "COMMENT" | "MENTOR" | "INVITE" | "CONFIRMED" | "REPORT" | "STORY";
 
 /** Adds an item to someone's notifications list. Old ones (60 days) are cleared out as we go. */
 export async function createNotification(opts: { userId: string; type: NotificationType; text: string; href: string }) {

@@ -5,6 +5,8 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { db } from "@/lib/db";
 import { requireUserId } from "@/lib/session";
+import { REACTIONS } from "@/lib/reactions";
+import { createNotification } from "@/lib/notifications";
 import { deleteBlobs, pickFiles, tryUpload } from "@/lib/upload";
 import { STORY_BG_KEYS, STORY_HOURS, STORY_MAX_CHARS } from "@/lib/stories";
 import { storyWhere } from "@/lib/story-queries";
@@ -83,4 +85,32 @@ export async function deleteStory(formData: FormData) {
   if (story.imageUrl) await deleteBlobs([story.imageUrl]);
   revalidatePath("/", "layout");
   redirect("/");
+}
+
+/** Reacts to someone else's story. Tapping the same emoji again removes it; a different one replaces it. */
+export async function reactToStory(storyId: string, emoji: string) {
+  const userId = await requireUserId();
+  if (!(REACTIONS as readonly string[]).includes(emoji)) return;
+
+  const story = await db.story.findFirst({
+    where: { id: storyId, authorId: { not: userId }, ...(await storyWhere(userId)) },
+    select: { id: true, authorId: true },
+  });
+  if (!story) return;
+
+  const key = { storyId_userId: { storyId, userId } };
+  const existing = await db.storyReaction.findUnique({ where: key });
+  if (existing?.emoji === emoji) {
+    await db.storyReaction.delete({ where: key });
+    return;
+  }
+  await db.storyReaction.upsert({ where: key, create: { storyId, userId, emoji }, update: { emoji } });
+
+  const me = await db.user.findUnique({ where: { id: userId }, select: { name: true } });
+  await createNotification({
+    userId: story.authorId,
+    type: "STORY",
+    text: `${me?.name ?? "Someone"} reacted ${emoji} to your story`,
+    href: `/stories/${story.authorId}`,
+  });
 }
