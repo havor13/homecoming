@@ -6,6 +6,7 @@ import { ensureCircleThread } from "@/lib/access";
 import { approveMember, makeAdmin, removeMember, toggleMembership } from "@/lib/actions/circles";
 import { postInclude } from "@/lib/queries";
 import { hiddenUserIds } from "@/lib/privacy";
+import { circleMatches, hasRequirement, requirementLabel } from "@/lib/circle-match";
 import { Avatar } from "@/components/Avatar";
 import { Chat } from "@/components/Chat";
 import { PostCard } from "@/components/PostCard";
@@ -41,6 +42,13 @@ export default async function CirclePage({
   const me = await db.membership.findUnique({
     where: { userId_circleId: { userId, circleId: circle.id } },
   });
+  // Circles can be for a particular mission, language or return year. Others can still ask to join.
+  const requirement = requirementLabel(circle);
+  const viewer = !me && hasRequirement(circle)
+    ? await db.user.findUnique({ where: { id: userId }, select: { missionName: true, language: true, yearsServed: true } })
+    : null;
+  const fitsProfile = !viewer || circleMatches(circle, viewer);
+  const needsApproval = circle.visibility === "PRIVATE" || !fitsProfile;
   const isActive = me?.status === "ACTIVE";
   const isPending = me?.status === "PENDING";
   const isAdmin = me?.status === "ACTIVE" && me.role === "ADMIN";
@@ -68,6 +76,7 @@ export default async function CirclePage({
           <span className={`chip${circle.visibility === "PRIVATE" ? " amber" : ""}`}>
             {circle.visibility === "PRIVATE" ? "Private" : "Public"}
           </span>
+          {requirement && <span className="chip">{requirement}</span>}
           <span className="muted">{circle._count.members} {circle._count.members === 1 ? "member" : "members"}</span>
         </div>
         <h1>{circle.name}</h1>
@@ -75,7 +84,7 @@ export default async function CirclePage({
         <div className="row">
           {!me && (
             <form action={toggleMembership.bind(null, circle.id)}>
-              <button className="primary">{circle.visibility === "PRIVATE" ? "Request to join" : "Join circle"}</button>
+              <button className="primary">{needsApproval ? "Request to join" : "Join circle"}</button>
             </form>
           )}
           {isPending && (
@@ -90,6 +99,13 @@ export default async function CirclePage({
           )}
           <Link href="/circles">All circles</Link>
         </div>
+        {!me && !fitsProfile && (
+          <p className="muted">
+            This circle is for members who match: {requirement.toLowerCase()}. Your profile doesn&apos;t show that yet.
+            You can still send a request, and an admin will decide. If your profile is out of date,{" "}
+            <Link href="/profile">update it</Link> first.
+          </p>
+        )}
         {mustHandOver && (
           <p className="muted">You are the only admin. Make another member an admin before you leave.</p>
         )}

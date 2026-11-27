@@ -8,6 +8,7 @@ import { db } from "@/lib/db";
 import { requireUserId } from "@/lib/session";
 import { activeMembership } from "@/lib/access";
 import { slugify } from "@/lib/format";
+import { circleMatches } from "@/lib/circle-match";
 import type { FormState } from "@/lib/types";
 
 function refresh() {
@@ -19,6 +20,7 @@ const circleSchema = z.object({
   description: z.string().trim().min(10, "Describe the circle in at least 10 characters.").max(300),
   kind: z.enum(["MISSION", "LANGUAGE", "RETURN_YEAR", "INTEREST"]),
   visibility: z.enum(["PUBLIC", "PRIVATE"]),
+  matchValue: z.string().trim().max(60).optional(),
 });
 
 export async function createCircle(_prev: FormState, formData: FormData): Promise<FormState> {
@@ -33,6 +35,12 @@ export async function createCircle(_prev: FormState, formData: FormData): Promis
   if (!parsed.success) return { error: parsed.error.issues[0].message };
   const data = parsed.data;
 
+  // Interest circles are open to everyone, so there is nothing to match.
+  const matchValue = data.kind === "INTEREST" ? null : data.matchValue || null;
+  if (data.kind === "RETURN_YEAR" && matchValue && !/\b(19|20)\d{2}\b/.test(matchValue)) {
+    return { error: "For a return-year circle, enter a year such as 2023." };
+  }
+
   const base = slugify(data.name) || "circle";
   const taken = await db.circle.findUnique({ where: { slug: base } });
   const slug = taken ? `${base}-${randomBytes(2).toString("hex")}` : base;
@@ -44,6 +52,7 @@ export async function createCircle(_prev: FormState, formData: FormData): Promis
       description: data.description,
       kind: data.kind,
       visibility: data.visibility,
+      matchValue,
       createdById: userId,
       members: { create: { userId, role: "ADMIN", status: "ACTIVE" } },
       thread: { create: {} },
@@ -56,7 +65,10 @@ export async function createCircle(_prev: FormState, formData: FormData): Promis
 /** Join, request to join (private circles), cancel a request, or leave. */
 export async function toggleMembership(circleId: string) {
   const userId = await requireUserId();
-  const circle = await db.circle.findUnique({ where: { id: circleId }, select: { visibility: true } });
+  const circle = await db.circle.findUnique({
+    where: { id: circleId },
+    select: { visibility: true, kind: true, matchValue: true },
+  });
   if (!circle) return;
 
   const key = { userId_circleId: { userId, circleId } };
@@ -75,8 +87,15 @@ export async function toggleMembership(circleId: string) {
     }
     await db.membership.delete({ where: key });
   } else {
+    // Public circles let matching members straight in. Private circles, and people whose profile
+    // doesn't match the circle, send a request for an admin to decide.
+    const me = await db.user.findUnique({
+      where: { id: userId },
+      select: { missionName: true, language: true, yearsServed: true },
+    });
+    const walkIn = circle.visibility === "PUBLIC" && !!me && circleMatches(circle, me);
     await db.membership.create({
-      data: { userId, circleId, status: circle.visibility === "PRIVATE" ? "PENDING" : "ACTIVE" },
+      data: { userId, circleId, status: walkIn ? "ACTIVE" : "PENDING" },
     });
   }
   refresh();

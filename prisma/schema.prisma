@@ -132,6 +132,9 @@ model Circle {
   kind        CircleKind
   description String
   visibility  Visibility @default(PUBLIC)
+  // Who the circle is for, matched against a member's profile: a mission name for MISSION circles,
+  // a language for LANGUAGE circles, a year for RETURN_YEAR circles. Empty means anyone.
+  matchValue  String?
   createdById String?
   createdBy   User?      @relation("CircleCreator", fields: [createdById], references: [id], onDelete: SetNull)
   createdAt   DateTime   @default(now())
