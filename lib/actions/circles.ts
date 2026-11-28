@@ -156,10 +156,21 @@ export async function removeMember(circleId: string, targetId: string) {
 export async function makeAdmin(circleId: string, targetId: string) {
   const userId = await requireUserId();
   if (!(await isAdmin(userId, circleId))) return;
-  await db.membership.updateMany({
-    where: { circleId, userId: targetId, status: "ACTIVE" },
+  const result = await db.membership.updateMany({
+    where: { circleId, userId: targetId, status: "ACTIVE", role: "MEMBER" },
     data: { role: "ADMIN" },
   });
+  if (result.count > 0) {
+    const circle = await db.circle.findUnique({ where: { id: circleId }, select: { slug: true, name: true } });
+    if (circle) {
+      await createNotification({
+        userId: targetId,
+        type: "CONFIRMED",
+        text: `You are now an admin of ${circle.name}`,
+        href: `/circles/${circle.slug}`,
+      });
+    }
+  }
   refresh();
 }
 
@@ -179,6 +190,26 @@ export async function updateCircleRequirement(_prev: FormState, formData: FormDa
   }
 
   await db.circle.update({ where: { id: circleId }, data: { matchValue: value.data || null } });
+  refresh();
+  return { ok: true };
+}
+
+const editSchema = z.object({
+  name: z.string().trim().min(3, "Give the circle a name of at least 3 characters.").max(60),
+  description: z.string().trim().min(10, "Describe the circle in at least 10 characters.").max(300),
+  visibility: z.enum(["PUBLIC", "PRIVATE"]),
+});
+
+/** Lets a circle's admin change its name, description and visibility. The address stays the same. */
+export async function updateCircle(_prev: FormState, formData: FormData): Promise<FormState> {
+  const userId = await requireUserId();
+  const circleId = String(formData.get("circleId") ?? "");
+  if (!(await isAdmin(userId, circleId))) return { error: "Only a circle admin can edit this circle." };
+
+  const parsed = editSchema.safeParse(Object.fromEntries(formData));
+  if (!parsed.success) return { error: parsed.error.issues[0].message };
+
+  await db.circle.update({ where: { id: circleId }, data: parsed.data });
   refresh();
   return { ok: true };
 }

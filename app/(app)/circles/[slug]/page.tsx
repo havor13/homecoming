@@ -9,6 +9,7 @@ import { hiddenUserIds } from "@/lib/privacy";
 import { circleMatches, hasRequirement, requirementLabel } from "@/lib/circle-match";
 import { Avatar } from "@/components/Avatar";
 import { CircleRequirementForm } from "@/components/CircleRequirementForm";
+import { CircleEditForm } from "@/components/CircleEditForm";
 import { Chat } from "@/components/Chat";
 import { PostCard } from "@/components/PostCard";
 import { PostComposer } from "@/components/PostComposer";
@@ -112,8 +113,21 @@ export default async function CirclePage({
         )}
       </section>
 
-      {isAdmin && circle.kind !== "INTEREST" && (
-        <CircleRequirementForm circleId={circle.id} kind={circle.kind} current={circle.matchValue ?? ""} />
+      {isAdmin && (
+        <details className="card">
+          <summary><strong>Edit circle</strong> <span className="muted">(admins only)</span></summary>
+          <div className="stack" style={{ marginTop: 12 }}>
+            <CircleEditForm
+              circleId={circle.id}
+              name={circle.name}
+              description={circle.description}
+              visibility={circle.visibility}
+            />
+            {circle.kind !== "INTEREST" && (
+              <CircleRequirementForm circleId={circle.id} kind={circle.kind} current={circle.matchValue ?? ""} />
+            )}
+          </div>
+        </details>
       )}
 
       {!isActive ? (
