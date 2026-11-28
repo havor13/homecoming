@@ -111,9 +111,12 @@ export default async function JobsPage({
                   <ReportButton targetType="JOB" targetId={j.id} />
                 </>
               ) : (
-                <form action={deleteJob.bind(null, j.id)}>
-                  <button className="danger">Remove</button>
-                </form>
+                <>
+                  <Link className="btn" href={`/jobs/${j.id}/edit`}>Edit</Link>
+                  <form action={deleteJob.bind(null, j.id)}>
+                    <button className="danger">Remove</button>
+                  </form>
+                </>
               )}
             </div>
           </article>

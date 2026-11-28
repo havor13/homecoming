@@ -76,6 +76,54 @@ export async function createJob(_prev: FormState, formData: FormData): Promise<F
   redirect("/jobs");
 }
 
+/** Lets the person who posted a job change its details, remove files and add new ones. */
+export async function updateJob(_prev: FormState, formData: FormData): Promise<FormState> {
+  const userId = await requireUserId();
+  const jobId = String(formData.get("jobId") ?? "");
+
+  const job = await db.job.findFirst({ where: { id: jobId, postedById: userId }, include: { attachments: true } });
+  if (!job) return { error: "You can only edit jobs you posted." };
+
+  const parsed = jobSchema.safeParse(Object.fromEntries(formData));
+  if (!parsed.success) return { error: parsed.error.issues[0].message };
+  const data = parsed.data;
+
+  const applyUrl = cleanUrl(data.applyUrl);
+  if (applyUrl === undefined) return { error: "The apply link must start with http:// or https://." };
+
+  // Only files that belong to this job can be removed.
+  const removeIds = new Set(formData.getAll("removeFile").map(String));
+  const removing = job.attachments.filter((a) => removeIds.has(a.id));
+  const keeping = job.attachments.length - removing.length;
+
+  const newFiles = pickFiles(formData, "files");
+  if (keeping + newFiles.length > 4) return { error: "A job can have up to 4 files. Remove one first." };
+
+  const upload = await tryUpload(newFiles, "jobs", userId);
+  if (!upload.ok) return { error: upload.error };
+
+  await db.job.update({
+    where: { id: job.id },
+    data: {
+      title: data.title,
+      company: data.company,
+      location: data.location,
+      type: data.type,
+      description: data.description,
+      applyUrl,
+      remote: formData.get("remote") === "on",
+      canRefer: formData.get("canRefer") === "on",
+      attachments: {
+        deleteMany: { id: { in: removing.map((a) => a.id) } },
+        create: upload.files,
+      },
+    },
+  });
+  await deleteBlobs(removing.map((a) => a.url));
+  revalidatePath("/jobs");
+  redirect("/jobs");
+}
+
 export async function deleteJob(jobId: string) {
   const userId = await requireUserId();
   const job = await db.job.findFirst({ where: { id: jobId, postedById: userId }, include: { attachments: true } });
