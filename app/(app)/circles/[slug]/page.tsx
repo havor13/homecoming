@@ -8,6 +8,7 @@ import { postInclude } from "@/lib/queries";
 import { hiddenUserIds } from "@/lib/privacy";
 import { circleMatches, hasRequirement, requirementLabel } from "@/lib/circle-match";
 import { Avatar } from "@/components/Avatar";
+import { CircleRequirementForm } from "@/components/CircleRequirementForm";
 import { Chat } from "@/components/Chat";
 import { PostCard } from "@/components/PostCard";
 import { PostComposer } from "@/components/PostComposer";
@@ -110,6 +111,10 @@ export default async function CirclePage({
           <p className="muted">You are the only admin. Make another member an admin before you leave.</p>
         )}
       </section>
+
+      {isAdmin && circle.kind !== "INTEREST" && (
+        <CircleRequirementForm circleId={circle.id} kind={circle.kind} current={circle.matchValue ?? ""} />
+      )}
 
       {!isActive ? (
         <p className="card muted">

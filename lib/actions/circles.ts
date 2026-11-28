@@ -135,3 +135,23 @@ export async function makeAdmin(circleId: string, targetId: string) {
   });
   refresh();
 }
+
+/** Lets a circle's admin set, change or clear who the circle is for. */
+export async function updateCircleRequirement(_prev: FormState, formData: FormData): Promise<FormState> {
+  const userId = await requireUserId();
+  const circleId = String(formData.get("circleId") ?? "");
+  if (!(await isAdmin(userId, circleId))) return { error: "Only a circle admin can change this." };
+
+  const circle = await db.circle.findUnique({ where: { id: circleId }, select: { kind: true } });
+  if (!circle || circle.kind === "INTEREST") return { error: "Interest circles are open to everyone." };
+
+  const value = z.string().trim().max(60, "Keep it under 60 characters.").safeParse(formData.get("matchValue") ?? "");
+  if (!value.success) return { error: value.error.issues[0].message };
+  if (circle.kind === "RETURN_YEAR" && value.data && !/\b(19|20)\d{2}\b/.test(value.data)) {
+    return { error: "For a return-year circle, enter a year such as 2023." };
+  }
+
+  await db.circle.update({ where: { id: circleId }, data: { matchValue: value.data || null } });
+  refresh();
+  return { ok: true };
+}
