@@ -8,6 +8,7 @@ import { db } from "@/lib/db";
 import { requireUserId } from "@/lib/session";
 import { activeMembership } from "@/lib/access";
 import { slugify } from "@/lib/format";
+import { createNotification } from "@/lib/notifications";
 import { circleMatches } from "@/lib/circle-match";
 import type { FormState } from "@/lib/types";
 
@@ -67,7 +68,7 @@ export async function toggleMembership(circleId: string) {
   const userId = await requireUserId();
   const circle = await db.circle.findUnique({
     where: { id: circleId },
-    select: { visibility: true, kind: true, matchValue: true },
+    select: { visibility: true, kind: true, matchValue: true, slug: true, name: true },
   });
   if (!circle) return;
 
@@ -91,12 +92,27 @@ export async function toggleMembership(circleId: string) {
     // doesn't match the circle, send a request for an admin to decide.
     const me = await db.user.findUnique({
       where: { id: userId },
-      select: { missionName: true, language: true, yearsServed: true },
+      select: { name: true, missionName: true, language: true, yearsServed: true },
     });
     const walkIn = circle.visibility === "PUBLIC" && !!me && circleMatches(circle, me);
     await db.membership.create({
       data: { userId, circleId, status: walkIn ? "ACTIVE" : "PENDING" },
     });
+    // Tell the circle's admins that someone is waiting.
+    if (!walkIn) {
+      const admins = await db.membership.findMany({
+        where: { circleId, role: "ADMIN", status: "ACTIVE" },
+        select: { userId: true },
+      });
+      for (const a of admins) {
+        await createNotification({
+          userId: a.userId,
+          type: "INVITE",
+          text: `${me?.name ?? "Someone"} asked to join ${circle.name}`,
+          href: `/circles/${circle.slug}?tab=members`,
+        });
+      }
+    }
   }
   refresh();
 }
@@ -109,10 +125,21 @@ async function isAdmin(userId: string, circleId: string) {
 export async function approveMember(circleId: string, targetId: string) {
   const userId = await requireUserId();
   if (!(await isAdmin(userId, circleId))) return;
-  await db.membership.updateMany({
+  const result = await db.membership.updateMany({
     where: { circleId, userId: targetId, status: "PENDING" },
     data: { status: "ACTIVE" },
   });
+  if (result.count > 0) {
+    const circle = await db.circle.findUnique({ where: { id: circleId }, select: { slug: true, name: true } });
+    if (circle) {
+      await createNotification({
+        userId: targetId,
+        type: "CONFIRMED",
+        text: `You can now join the conversation in ${circle.name}`,
+        href: `/circles/${circle.slug}`,
+      });
+    }
+  }
   refresh();
 }
 
