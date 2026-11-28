@@ -10,6 +10,8 @@ import { circleMatches, hasRequirement, requirementLabel } from "@/lib/circle-ma
 import { Avatar } from "@/components/Avatar";
 import { CircleRequirementForm } from "@/components/CircleRequirementForm";
 import { CircleEditForm } from "@/components/CircleEditForm";
+import { DeleteCircleForm } from "@/components/DeleteCircleForm";
+import { isModeratorEmail } from "@/lib/moderation";
 import { Chat } from "@/components/Chat";
 import { PostCard } from "@/components/PostCard";
 import { PostComposer } from "@/components/PostComposer";
@@ -51,6 +53,8 @@ export default async function CirclePage({
     : null;
   const fitsProfile = !viewer || circleMatches(circle, viewer);
   const needsApproval = circle.visibility === "PRIVATE" || !fitsProfile;
+  const viewerRow = await db.user.findUnique({ where: { id: userId }, select: { email: true } });
+  const isModerator = isModeratorEmail(viewerRow?.email);
   const isActive = me?.status === "ACTIVE";
   const isPending = me?.status === "PENDING";
   const isAdmin = me?.status === "ACTIVE" && me.role === "ADMIN";
@@ -126,6 +130,15 @@ export default async function CirclePage({
             {circle.kind !== "INTEREST" && (
               <CircleRequirementForm circleId={circle.id} kind={circle.kind} current={circle.matchValue ?? ""} />
             )}
+          </div>
+        </details>
+      )}
+
+      {isModerator && (
+        <details className="card">
+          <summary><strong>Delete circle</strong> <span className="muted">(project admins only)</span></summary>
+          <div style={{ marginTop: 12 }}>
+            <DeleteCircleForm circleId={circle.id} name={circle.name} />
           </div>
         </details>
       )}

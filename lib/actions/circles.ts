@@ -9,6 +9,8 @@ import { requireUserId } from "@/lib/session";
 import { activeMembership } from "@/lib/access";
 import { slugify } from "@/lib/format";
 import { createNotification } from "@/lib/notifications";
+import { requireModerator } from "@/lib/moderation";
+import { deleteBlobs } from "@/lib/upload";
 import { circleMatches } from "@/lib/circle-match";
 import type { FormState } from "@/lib/types";
 
@@ -212,4 +214,39 @@ export async function updateCircle(_prev: FormState, formData: FormData): Promis
   await db.circle.update({ where: { id: circleId }, data: parsed.data });
   refresh();
   return { ok: true };
+}
+
+/**
+ * Deletes a circle for good. Only moderators (the project admins) can do it, and they must type the
+ * circle's name to confirm. The circle's posts, chat messages and files are deleted with it.
+ */
+export async function deleteCircle(_prev: FormState, formData: FormData): Promise<FormState> {
+  await requireModerator();
+  const circleId = String(formData.get("circleId") ?? "");
+  const typed = String(formData.get("confirm") ?? "").trim().toLowerCase();
+
+  const circle = await db.circle.findUnique({
+    where: { id: circleId },
+    select: {
+      id: true,
+      name: true,
+      posts: { select: { id: true, attachments: { select: { url: true } } } },
+      thread: { select: { messages: { select: { attachments: { select: { url: true } } } } } },
+    },
+  });
+  if (!circle) return { error: "This circle no longer exists." };
+  if (typed !== circle.name.trim().toLowerCase()) return { error: "Type the circle's name exactly to confirm." };
+
+  const urls = [
+    ...circle.posts.flatMap((p) => p.attachments.map((a) => a.url)),
+    ...(circle.thread?.messages ?? []).flatMap((m) => m.attachments.map((a) => a.url)),
+  ];
+
+  // Posts only detach from a deleted circle, which would make them public, so they are deleted first.
+  await db.post.deleteMany({ where: { circleId: circle.id } });
+  await db.circle.delete({ where: { id: circle.id } });
+  await deleteBlobs(urls);
+
+  refresh();
+  redirect("/circles");
 }
